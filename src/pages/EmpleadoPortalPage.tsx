@@ -60,6 +60,12 @@ export function EmpleadoPortalPage() {
   const [tubos, setTubos] = useState<any[]>([])
   const [stockInsumos, setStockInsumos] = useState<any[]>([])
   const [openMovStock, setOpenMovStock] = useState(false)
+  const [openEditarStock, setOpenEditarStock] = useState(false)
+  const [editStockForm, setEditStockForm] = useState<any>({})
+  const [savingEditStock, setSavingEditStock] = useState(false)
+  const [openConfirmBorrarStock, setOpenConfirmBorrarStock] = useState(false)
+  const [insumoABorrarStock, setInsumoABorrarStock] = useState<any>(null)
+  const [savingBorrarStock, setSavingBorrarStock] = useState(false)
   const [insumoActivo, setInsumoActivo] = useState<any>(null)
   const [movStockForm, setMovStockForm] = useState<any>({ tipo_movimiento: 'salida', cantidad: '' })
   const [savingMovStock, setSavingMovStock] = useState(false)
@@ -73,6 +79,13 @@ export function EmpleadoPortalPage() {
   const [openNuevoTubo, setOpenNuevoTubo] = useState(false)
   const [nuevoTuboForm, setNuevoTuboForm] = useState<any>({})
   const [savingNuevoTubo, setSavingNuevoTubo] = useState(false)
+  const [openHistorialTubo, setOpenHistorialTubo] = useState(false)
+  const [historialTubo, setHistorialTubo] = useState<any[]>([])
+  const [openConfirmBorrarTubo, setOpenConfirmBorrarTubo] = useState(false)
+  const [savingBorrarTubo, setSavingBorrarTubo] = useState(false)
+  const [openEditTurno,   setOpenEditTurno]   = useState(false)
+  const [formEditTurno,   setFormEditTurno]   = useState<any>({})
+  const [savingEditTurno, setSavingEditTurno] = useState(false)
   const [empleadosTodos, setEmpleadosTodos] = useState<any[]>([])
   const [mesPortal, setMesPortal] = useState(() => new Date().toISOString().substring(0, 7))
   const [tabSector, setTabSector] = useState('internacion')
@@ -99,7 +112,7 @@ export function EmpleadoPortalPage() {
     const inicioMes = mesPortal + '-01'
     const [y, m] = mesPortal.split('-').map(Number)
     const finMes = new Date(y, m, 0).toISOString().split('T')[0]
-    supabase.from('turnos').select('empleado_id, fecha, tipo_turno, estado')
+    supabase.from('turnos').select('id, empleado_id, fecha, tipo_turno, estado, hora_entrada_programada, hora_salida_programada, observaciones, es_reemplazo')
       .gte('fecha', inicioMes).lte('fecha', finMes)
       .then(({ data }) => setTurnosGeneral(data ?? []))
   }, [mesPortal])
@@ -262,8 +275,11 @@ export function EmpleadoPortalPage() {
 
   const hoy = new Date().toISOString().split('T')[0]
   const marcHoy = marcaciones.filter(m => m.fecha === hoy)
-  const entradaHoy = marcHoy.find(m => m.tipo === 'entrada')
-  const salidaHoy  = marcHoy.find(m => m.tipo === 'salida')
+  const entradaHoy = [...marcHoy].filter(m => m.tipo === 'entrada').sort((a, b) => b.hora.localeCompare(a.hora))[0]
+  const salidaHoy  = [...marcHoy].filter(m => m.tipo === 'salida').sort((a, b) => b.hora.localeCompare(a.hora))[0]
+  const ultimaMarcHoy = [...marcHoy].sort((a, b) => b.hora.localeCompare(a.hora))[0]
+  const puedeMarcarEntrada = !ultimaMarcHoy || ultimaMarcHoy.tipo === 'salida'
+  const puedeMarcarSalida  = !!ultimaMarcHoy && ultimaMarcHoy.tipo === 'entrada'
 
   if (loading) return (
     <Page><div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Spinner size={36} /></div></Page>
@@ -271,7 +287,7 @@ export function EmpleadoPortalPage() {
 
   const esRolInsumos = usuario?.rol === 'referente_enfermeria' || usuario?.rol === 'referente_instrumentadores'
   const puedeVerPrestaciones = ['administrativo','enfermeria','instrumentadora','referente_enfermeria','referente_instrumentadores','rrhh','admin'].includes(usuario?.rol ?? '')
-  const puedeEditarTurnos = ['referente_empleado','referente_enfermeria','referente_instrumentadores','rrhh','admin'].includes(usuario?.rol ?? '')
+  const puedeEditarTurnos = ['referente_empleados','referente_enfermeria','referente_instrumentadores','rrhh','admin'].includes(usuario?.rol ?? '')
   const puedeVerGasesStock = ['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
 
   const puedeOperarSinLegajo = esRolInsumos
@@ -377,11 +393,11 @@ export function EmpleadoPortalPage() {
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <Button style={{ flex: 1, justifyContent: 'center', background: entradaHoy ? 'var(--green-500)' : 'var(--green-600)', fontSize: '15px', padding: '12px' }}
-                onClick={() => marcarAsistencia('entrada')} loading={marcando} disabled={!!entradaHoy}>
+                onClick={() => marcarAsistencia('entrada')} loading={marcando} disabled={!puedeMarcarEntrada}>
                 {entradaHoy ? '✓ Entrada registrada' : '🟢 Marcar entrada'}
               </Button>
               <Button style={{ flex: 1, justifyContent: 'center', background: salidaHoy ? 'var(--red-500)' : 'var(--red-600)', fontSize: '15px', padding: '12px' }}
-                onClick={() => marcarAsistencia('salida')} loading={marcando} disabled={!entradaHoy || !!salidaHoy}>
+                onClick={() => marcarAsistencia('salida')} loading={marcando} disabled={!puedeMarcarSalida}>
                 {salidaHoy ? '✓ Salida registrada' : '🔴 Marcar salida'}
               </Button>
             </div>
@@ -506,6 +522,81 @@ export function EmpleadoPortalPage() {
           manana: '#0D9488', tarde: '#D97706', noche: '#4F46E5', franco: '#6B7280',
           adm_manana: '#0D9488', adm_tarde1: '#D97706', adm_tarde2: '#EA580C', adm_partido: '#7C3AED',
         }
+        const TURNOS_FIJOS_ED: Record<string, { label: string; color: string; entrada: string; salida: string }> = {
+          manana: { label: 'Mañana (06–14)', color: '#0D9488', entrada: '06:00', salida: '14:00' },
+          tarde:  { label: 'Tarde (14–22)',  color: '#D97706', entrada: '14:00', salida: '22:00' },
+          noche:  { label: 'Noche (22–06)', color: '#4F46E5', entrada: '22:00', salida: '06:00' },
+          franco: { label: 'Franco',         color: '#6B7280', entrada: '',      salida: ''      },
+        }
+        const TURNOS_FLEX_ED: Record<string, { label: string; color: string; entrada: string; salida: string; partido?: boolean }> = {
+          adm_manana:  { label: 'Mañana corrida (06:30–14:30)', color: '#0D9488', entrada: '06:30', salida: '14:30' },
+          adm_tarde1:  { label: 'Tarde (15:00–19:00)',           color: '#D97706', entrada: '15:00', salida: '19:00' },
+          adm_tarde2:  { label: 'Tarde (14:00–19:30)',           color: '#EA580C', entrada: '14:00', salida: '19:30' },
+          adm_partido: { label: 'Partido (08–12 + vuelta flex)', color: '#7C3AED', entrada: '08:00', salida: '12:00', partido: true },
+          franco:      { label: 'Franco',                        color: '#6B7280', entrada: '',      salida: ''      },
+        }
+        const ESTADOS_PUNTUALES_ED = [
+          { value: 'programado', label: 'Programado' }, { value: 'presente', label: 'Presente' },
+          { value: 'ausente', label: 'Ausente' }, { value: 'justificado', label: 'Justificado' },
+          { value: 'licencia', label: 'Licencia' }, { value: 'feriado', label: 'Feriado' },
+        ]
+        const SECTORES_FLEX_ED = ['Administración', 'Imágenes']
+
+        function abrirEdicionTurno(turno: any, emp: any, fecha: string) {
+          if (!puedeEditarTurnos) return
+          const sect = (emp.sectores as any)?.nombre ?? ''
+          const flex = SECTORES_FLEX_ED.includes(sect)
+          if (turno) {
+            setFormEditTurno({ ...turno, _emp: emp })
+          } else {
+            setFormEditTurno({
+              empleado_id: emp.id, fecha,
+              tipo_turno: flex ? 'adm_manana' : 'manana',
+              hora_entrada_programada: flex ? '06:30' : '06:00',
+              hora_salida_programada: flex ? '14:30' : '14:00',
+              estado: 'programado', _emp: emp,
+            })
+          }
+          setOpenEditTurno(true)
+        }
+
+        async function guardarEditTurno() {
+          if (!formEditTurno.empleado_id || !formEditTurno.fecha) return
+          setSavingEditTurno(true)
+          try {
+            const { _emp, empleados: _e, sectores: _s, ...datos } = formEditTurno
+            if (datos.tipo_turno === 'franco') { datos.hora_entrada_programada = null; datos.hora_salida_programada = null }
+            if (datos.hora_entrada_programada === '') datos.hora_entrada_programada = null
+            if (datos.hora_salida_programada === '') datos.hora_salida_programada = null
+            if (datos.id) {
+              await supabase.from('turnos').update(datos).eq('id', datos.id)
+            } else {
+              await supabase.from('turnos').upsert(datos, { onConflict: 'empleado_id,fecha', ignoreDuplicates: false })
+            }
+            setOpenEditTurno(false)
+            // Recargar turnosGeneral
+            const inicioMes = mesPortal + '-01'
+            const [yy, mm] = mesPortal.split('-').map(Number)
+            const finMes = new Date(yy, mm, 0).toISOString().split('T')[0]
+            const { data } = await supabase.from('turnos')
+              .select('id, empleado_id, fecha, tipo_turno, estado, hora_entrada_programada, hora_salida_programada, observaciones, es_reemplazo')
+              .gte('fecha', inicioMes).lte('fecha', finMes)
+            setTurnosGeneral(data ?? [])
+          } finally { setSavingEditTurno(false) }
+        }
+
+        async function eliminarTurnoPortal(id: string) {
+          if (!confirm('¿Eliminar este turno?')) return
+          await supabase.from('turnos').delete().eq('id', id)
+          setOpenEditTurno(false)
+          const inicioMes = mesPortal + '-01'
+          const [yy, mm] = mesPortal.split('-').map(Number)
+          const finMes = new Date(yy, mm, 0).toISOString().split('T')[0]
+          const { data } = await supabase.from('turnos')
+            .select('id, empleado_id, fecha, tipo_turno, estado, hora_entrada_programada, hora_salida_programada, observaciones, es_reemplazo')
+            .gte('fecha', inicioMes).lte('fecha', finMes)
+          setTurnosGeneral(data ?? [])
+        }
 
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -549,6 +640,10 @@ export function EmpleadoPortalPage() {
               const sectoresActivos = TABS_SECTORES[tabSector] ?? []
               const empsFiltrados = empleadosTodos.filter((emp: any) => sectoresActivos.includes((emp.sectores as any)?.nombre))
               return (
+            <>
+            {puedeEditarTurnos && (
+              <p style={{ fontSize: '11px', color: 'var(--text-3)', textAlign: 'right', marginBottom: '4px' }}>Click en una celda para editar</p>
+            )}
             <Card style={{ overflow: 'auto' }}>
               <table style={{ borderCollapse: 'collapse', minWidth: '100%', fontSize: '11px' }}>
                 <thead>
@@ -588,8 +683,11 @@ export function EmpleadoPortalPage() {
                           const dow = new Date(fecha + 'T12:00:00').getDay()
                           const esFind = dow === 0 || dow === 6
                           return (
-                            <td key={fecha} style={{ padding: '2px', textAlign: 'center', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)',
-                              background: turno ? color + '25' : esFind ? 'var(--slate-100)' : 'transparent' }}>
+                            <td key={fecha}
+                              onClick={() => puedeEditarTurnos && abrirEdicionTurno(turno ?? null, emp, fecha)}
+                              style={{ padding: '2px', textAlign: 'center', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)',
+                                background: turno ? color + '25' : esFind ? 'var(--slate-100)' : 'transparent',
+                                cursor: puedeEditarTurnos ? 'pointer' : 'default' }}>
                               {turno && (
                                 <span style={{ display: 'inline-block', width: 22, height: 18, lineHeight: '18px', borderRadius: '3px',
                                   background: color!, color: '#fff', fontSize: '9px', fontWeight: 700 }}>
@@ -605,6 +703,7 @@ export function EmpleadoPortalPage() {
                 </tbody>
               </table>
             </Card>
+            </>
               )
             })()}
 
@@ -616,6 +715,90 @@ export function EmpleadoPortalPage() {
                 </span>
               ))}
             </div>
+
+            {/* Modal edición puntual de turno */}
+            {openEditTurno && formEditTurno.empleado_id && (() => {
+              const empEd = formEditTurno._emp ?? empleadosTodos.find((e: any) => e.id === formEditTurno.empleado_id)
+              const sect = (empEd?.sectores as any)?.nombre ?? ''
+              const flex = SECTORES_FLEX_ED.includes(sect)
+              const turnosEd = flex ? TURNOS_FLEX_ED : TURNOS_FIJOS_ED
+              return (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ background: 'white', borderRadius: 'var(--radius)', padding: '24px', width: 460, maxWidth: '90vw', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h3 style={{ fontWeight: 700 }}>Editar turno</h3>
+                      <button onClick={() => setOpenEditTurno(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-3)' }}>✕</button>
+                    </div>
+                    <div style={{ background: 'var(--slate-50)', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
+                      <p style={{ fontWeight: 600, fontSize: '13px' }}>{empEd?.apellido}, {empEd?.nombre}</p>
+                      <p style={{ fontSize: '12px', color: 'var(--text-3)' }}>
+                        {sect} · {new Date(formEditTurno.fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', marginBottom: '8px' }}>Tipo de turno</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                        {Object.entries(turnosEd).map(([k, v]: [string, any]) => (
+                          <div key={k}
+                            onClick={() => setFormEditTurno((p: any) => ({ ...p, tipo_turno: k, hora_entrada_programada: v.entrada, hora_salida_programada: v.partido ? '' : v.salida }))}
+                            style={{ padding: '8px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                              border: formEditTurno.tipo_turno === k ? `2px solid ${v.color}` : '1px solid var(--border)',
+                              background: formEditTurno.tipo_turno === k ? v.color + '18' : 'white' }}>
+                            <p style={{ fontWeight: 600, fontSize: '12px', color: v.color }}>{v.label}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Hora entrada</label>
+                        <input type="time" value={formEditTurno.hora_entrada_programada ?? ''}
+                          onChange={e => setFormEditTurno((p: any) => ({ ...p, hora_entrada_programada: e.target.value }))}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' as any }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Hora salida</label>
+                        <input type="time" value={formEditTurno.hora_salida_programada ?? ''}
+                          onChange={e => setFormEditTurno((p: any) => ({ ...p, hora_salida_programada: e.target.value }))}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' as any }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Estado</label>
+                      <select value={formEditTurno.estado ?? 'programado'}
+                        onChange={e => setFormEditTurno((p: any) => ({ ...p, estado: e.target.value }))}
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px' }}>
+                        {ESTADOS_PUNTUALES_ED.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Observaciones</label>
+                      <input value={formEditTurno.observaciones ?? ''} onChange={e => setFormEditTurno((p: any) => ({ ...p, observaciones: e.target.value }))}
+                        placeholder="Franco médico, licencia, etc."
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' as any }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                      <div>
+                        {formEditTurno.id && (
+                          <button onClick={() => eliminarTurnoPortal(formEditTurno.id)}
+                            style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: 'none', background: '#DC2626', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                            Eliminar
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={() => setOpenEditTurno(false)}
+                          style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}>Cancelar</button>
+                        <button onClick={guardarEditTurno} disabled={savingEditTurno}
+                          style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'var(--accent)', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                          {savingEditTurno ? 'Guardando...' : 'Guardar'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )
       })()}
@@ -638,6 +821,28 @@ export function EmpleadoPortalPage() {
         const puedeMovEmp = empleado && ['Internación','Quirófano','Quirófano 1','Quirófano 2'].includes(empleado.sector_nombre ?? '')
         const puedeMovInsumos = ['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
         const puedeMov = puedeMovEmp || puedeMovInsumos
+        const puedeGestionar = ['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
+
+        async function loadHistorialTubo(tuboId: string) {
+          const { data } = await supabase.from('tubos_historial').select('*').eq('tubo_id', tuboId).order('fecha', { ascending: false })
+          setHistorialTubo(data ?? [])
+        }
+        async function verHistorialTubo(tubo: any) {
+          setTuboActivo(tubo); await loadHistorialTubo(tubo.id); setOpenHistorialTubo(true)
+        }
+        async function handleBorrarTubo() {
+          if (!tuboActivo) return
+          setSavingBorrarTubo(true)
+          try {
+            await supabase.from('tubos_historial').delete().eq('tubo_id', tuboActivo.id)
+            const { error: errDel } = await supabase.from('tubos_gas').delete().eq('id', tuboActivo.id)
+            if (errDel) { alert('Error al borrar: ' + errDel.message); return }
+            if (tuboActivo.insumo_id) await supabase.rpc('incrementar_stock', { p_insumo_id: tuboActivo.insumo_id, p_cantidad: -1 })
+            setOpenConfirmBorrarTubo(false); setTuboActivo(null)
+            const { data } = await supabase.from('tubos_gas').select('*, proveedores(razon_social), insumos(nombre)').order('numero_serie')
+            setTubos(data ?? [])
+          } finally { setSavingBorrarTubo(false) }
+        }
 
         async function guardarMovTubo() {
           if (!tuboActivo || !movTuboForm.estado_nuevo || !movTuboForm.responsable_nombre) return
@@ -721,7 +926,7 @@ export function EmpleadoPortalPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
                   <tr>
-                    {['Nro serie','Gas','Estado','Ubicación actual','Proveedor', puedeMov ? 'Acción' : ''].filter(Boolean).map(h => (
+                    {['Nro serie','Gas','Estado','Ubicación actual','Proveedor', (puedeMov || puedeGestionar) ? 'Acción' : ''].filter(Boolean).map(h => (
                       <th key={h} style={{ padding: '10px 12px', textAlign: 'left', background: 'var(--slate-50)', borderBottom: '2px solid var(--border)', fontSize: '11px', fontWeight: 700, color: 'var(--text-3)' }}>{h}</th>
                     ))}
                   </tr>
@@ -738,12 +943,28 @@ export function EmpleadoPortalPage() {
                         </td>
                         <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>{t.ubicacion_actual ?? '—'}</td>
                         <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', color: 'var(--text-3)' }}>{t.proveedores?.razon_social ?? '—'}</td>
-                        {puedeMov && (
+                        {(puedeMov || puedeGestionar) && (
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
-                            <button onClick={() => { setTuboActivo(t); setMovTuboForm({ estado_nuevo: t.estado_tubo, ubicacion_nueva: t.ubicacion_actual, responsable_nombre: `${empleado?.nombre} ${empleado?.apellido}` }); setOpenMovTubo(true) }}
-                              style={{ padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: 'var(--accent)' }}>
-                              Mover
-                            </button>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                              {puedeMov && (
+                                <button onClick={() => { setTuboActivo(t); setMovTuboForm({ estado_nuevo: t.estado_tubo, ubicacion_nueva: t.ubicacion_actual, responsable_nombre: `${empleado?.nombre} ${empleado?.apellido}` }); setOpenMovTubo(true) }}
+                                  style={{ padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: 'var(--accent)' }}>
+                                  Mover
+                                </button>
+                              )}
+                              {puedeGestionar && (
+                                <button onClick={() => verHistorialTubo(t)}
+                                  style={{ padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: 'var(--text-2)' }}>
+                                  Historial
+                                </button>
+                              )}
+                              {puedeGestionar && (
+                                <button onClick={() => { setTuboActivo(t); setOpenConfirmBorrarTubo(true) }}
+                                  style={{ padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid #FECACA', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#DC2626' }}>
+                                  Borrar
+                                </button>
+                              )}
+                            </div>
                           </td>
                         )}
                       </tr>
@@ -794,6 +1015,57 @@ export function EmpleadoPortalPage() {
                     <button onClick={guardarMovTubo} disabled={savingMovTubo}
                       style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'var(--accent)', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
                       {savingMovTubo ? 'Guardando...' : 'Confirmar movimiento'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal historial tubo */}
+            {openHistorialTubo && tuboActivo && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: 'white', borderRadius: 'var(--radius)', padding: '24px', width: 620, maxWidth: '90vw', maxHeight: '90vh', overflow: 'auto' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h3 style={{ fontWeight: 700 }}>Historial — Tubo {tuboActivo.numero_serie}</h3>
+                    <button onClick={() => setOpenHistorialTubo(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: 'var(--text-3)' }}>✕</button>
+                  </div>
+                  {historialTubo.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px', fontSize: '13px' }}>Sin movimientos registrados</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {historialTubo.map((h, i) => (
+                        <div key={h.id} style={{ background: i === 0 ? '#EFF6FF' : 'var(--slate-50)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', border: `1px solid ${i === 0 ? '#BFDBFE' : 'var(--border)'}`, position: 'relative' }}>
+                          {i === 0 && <span style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: '#2563EB', color: '#fff', padding: '2px 6px', borderRadius: '99px' }}>ÚLTIMO</span>}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <p style={{ fontSize: '12px', fontWeight: 600 }}>{h.estado_anterior ? `${h.estado_anterior} → ` : ''}{h.estado_nuevo}</p>
+                            <span style={{ fontSize: '11px', color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
+                              {new Date(h.fecha).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {(h.ubicacion_anterior || h.ubicacion_nueva) && <p style={{ fontSize: '12px', color: 'var(--text-2)', marginBottom: '4px' }}>📍 {h.ubicacion_anterior && h.ubicacion_anterior !== h.ubicacion_nueva ? `${h.ubicacion_anterior} → ` : ''}{h.ubicacion_nueva}</p>}
+                          <p style={{ fontSize: '12px', fontWeight: 500 }}>👤 {h.responsable_nombre}{h.responsable_sector ? ` — ${h.responsable_sector}` : ''}</p>
+                          {h.observaciones && <p style={{ fontSize: '12px', color: 'var(--text-2)', marginTop: '4px', fontStyle: 'italic' }}>{h.observaciones}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Modal confirmar borrar tubo */}
+            {openConfirmBorrarTubo && tuboActivo && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: 'white', borderRadius: 'var(--radius)', padding: '24px', width: 440, maxWidth: '90vw' }}>
+                  <div style={{ textAlign: 'center', padding: '8px 0 20px' }}>
+                    <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚠️</div>
+                    <p style={{ fontWeight: 600, fontSize: '15px', marginBottom: '8px' }}>¿Borrar tubo <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--slate-100)', padding: '2px 6px', borderRadius: '4px' }}>{tuboActivo.numero_serie}</code>?</p>
+                    <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>Se eliminará el tubo y todo su historial. Esta acción no se puede deshacer.</p>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button onClick={() => setOpenConfirmBorrarTubo(false)} style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}>Cancelar</button>
+                    <button onClick={handleBorrarTubo} disabled={savingBorrarTubo} style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: 'none', background: '#DC2626', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                      {savingBorrarTubo ? 'Borrando...' : 'Sí, borrar'}
                     </button>
                   </div>
                 </div>
@@ -969,6 +1241,18 @@ export function EmpleadoPortalPage() {
                             style={{ padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: 'var(--accent)' }}>
                             Movimiento
                           </button>
+                    {['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '') && (
+                      <>
+                        <button onClick={() => { setEditStockForm({ ...ins }); setOpenEditarStock(true) }}
+                          style={{ padding: '4px 10px', marginLeft: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>
+                          Editar
+                        </button>
+                        <button onClick={() => { setInsumoABorrarStock(ins); setOpenConfirmBorrarStock(true) }}
+                          style={{ padding: '4px 10px', marginLeft: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: 'var(--red-600)' }}>
+                          Borrar
+                        </button>
+                      </>
+                    )}
                         </td>
                       </tr>
                     )
@@ -1027,7 +1311,118 @@ export function EmpleadoPortalPage() {
               </div>
             )}
 
-            {/* Modal nuevo insumo */}
+            {openEditarStock && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'white', borderRadius: 'var(--radius)', padding: '24px', width: 460, maxWidth: '90vw' }}>
+              <h3 style={{ fontWeight: 700, marginBottom: '16px' }}>Editar insumo</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Nombre *</label>
+                  <input value={editStockForm.nombre ?? ''} onChange={e => setEditStockForm((p: any) => ({ ...p, nombre: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Descripción</label>
+                  <input value={editStockForm.descripcion ?? ''} onChange={e => setEditStockForm((p: any) => ({ ...p, descripcion: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Unidad de medida *</label>
+                  <input value={editStockForm.unidad_medida ?? ''} onChange={e => setEditStockForm((p: any) => ({ ...p, unidad_medida: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Stock actual</label>
+                  <input type="number" value={editStockForm.stock_actual ?? 0} onChange={e => setEditStockForm((p: any) => ({ ...p, stock_actual: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Stock mínimo</label>
+                  <input type="number" value={editStockForm.stock_minimo ?? ''} onChange={e => setEditStockForm((p: any) => ({ ...p, stock_minimo: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Ubicación</label>
+                  <input value={editStockForm.ubicacion ?? ''} onChange={e => setEditStockForm((p: any) => ({ ...p, ubicacion: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button onClick={() => setOpenEditarStock(false)}
+                  style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}>Cancelar</button>
+                <button
+                  onClick={async () => {
+                    setSavingEditStock(true)
+                    try {
+                      const { error } = await supabase.from('insumos').update({
+                        nombre: editStockForm.nombre,
+                        descripcion: editStockForm.descripcion,
+                        unidad_medida: editStockForm.unidad_medida,
+                        stock_actual: editStockForm.stock_actual,
+                        stock_minimo: editStockForm.stock_minimo,
+                        ubicacion: editStockForm.ubicacion,
+                      }).eq('id', editStockForm.id)
+                      if (error) { alert('Error al guardar: ' + error.message); return }
+                      setOpenEditarStock(false)
+                      loadAll()
+                    } finally { setSavingEditStock(false) }
+                  }}
+                  disabled={savingEditStock || !editStockForm.nombre}
+                  style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'var(--accent)', color: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                  {savingEditStock ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {openConfirmBorrarStock && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'white', borderRadius: 'var(--radius)', padding: '24px', width: 420, maxWidth: '90vw' }}>
+              <div style={{ textAlign: 'center', padding: '8px 0 20px' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚠️</div>
+                <p style={{ fontWeight: 600, fontSize: '15px', marginBottom: '8px' }}>
+                  ¿Borrar <strong>{insumoABorrarStock?.nombre}</strong>?
+                </p>
+                <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>
+                  Se eliminará el insumo y no podrá recuperarse.
+                  {insumoABorrarStock?.stock_actual > 0 && (
+                    <> Actualmente tiene <strong>{insumoABorrarStock.stock_actual} {insumoABorrarStock.unidad_medida}</strong> en stock.</>
+                  )}
+                </p>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button onClick={() => setOpenConfirmBorrarStock(false)}
+                  style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}>Cancelar</button>
+                <button
+                  onClick={async () => {
+                    if (!insumoABorrarStock) return
+                    setSavingBorrarStock(true)
+                    try {
+                      const { error } = await supabase.from('insumos').delete().eq('id', insumoABorrarStock.id)
+                      if (error) {
+                        if (error.code === '23503') {
+                          alert('No se puede borrar este insumo porque tiene movimientos de stock registrados. Si querés dejar de usarlo, marcalo como "inactivo" en vez de borrarlo.')
+                        } else {
+                          alert('Error al borrar: ' + error.message)
+                        }
+                        return
+                      }
+                      setOpenConfirmBorrarStock(false)
+                      setInsumoABorrarStock(null)
+                      loadAll()
+                    } finally { setSavingBorrarStock(false) }
+                  }}
+                  disabled={savingBorrarStock}
+                  style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'var(--red-600)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>
+                  {savingBorrarStock ? 'Borrando...' : 'Sí, borrar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal nuevo insumo */}
             {openNuevoInsumo && (
               <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ background: 'white', borderRadius: 'var(--radius)', padding: '24px', width: 460, maxWidth: '90vw', display: 'flex', flexDirection: 'column', gap: '12px' }}>

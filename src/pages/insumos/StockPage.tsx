@@ -74,7 +74,14 @@ export function StockPage() {
     setSaving(true)
     try {
       const { error } = await supabase.from('insumos').delete().eq('id', insumoABorrar.id)
-      if (error) { alert('Error al borrar: ' + error.message); return }
+      if (error) {
+        if (error.code === '23503') {
+          alert('No se puede borrar este insumo porque tiene movimientos de stock registrados. Si querés dejar de usarlo, marcalo como "inactivo" en vez de borrarlo.')
+        } else {
+          alert('Error al borrar: ' + error.message)
+        }
+        return
+      }
       setOpenConfirmBorrar(false)
       setInsumoABorrar(null)
       loadAll()
@@ -245,7 +252,10 @@ export function StockPage() {
             ¿Borrar <strong>{insumoABorrar?.nombre}</strong>?
           </p>
           <p style={{ color: 'var(--text-2)', fontSize: '13px' }}>
-            Se eliminará el insumo y no podrá recuperarse. Si tiene movimientos registrados, puede dar error.
+            Se eliminará el insumo y no podrá recuperarse.
+              {insumoABorrar?.stock_actual > 0 && (
+                <> Actualmente tiene <strong>{insumoABorrar.stock_actual} {insumoABorrar.unidad_medida}</strong> en stock.</>
+              )}
           </p>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
