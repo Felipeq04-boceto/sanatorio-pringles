@@ -2,11 +2,10 @@ import React from 'react'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
-import { Button, Badge, Card, Modal, Input, Select, Spinner, Empty } from '@/components/ui'
+import { Button, Card, Modal, Input, Select, Spinner, Empty } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 
 // ── Configuración de sectores ─────────────────────────────────────────────────
-const SECTORES_FIJOS    = ['Internación','Quirófano','Limpieza','Cocina','Lavadero']
 const SECTORES_FLEXIBLES = ['Administración','Imágenes']
 
 // Tabs del calendario
@@ -63,7 +62,6 @@ function getTurnoInfo(tipo: string) {
 export function TurnosPage() {
   const { usuario } = useAuth()
   const [empleados, setEmpleados] = useState<any[]>([])
-  const [sectores,  setSectores]  = useState<any[]>([])
   const [turnos,    setTurnos]    = useState<any[]>([])
   const [licencias, setLicencias] = useState<any[]>([])
   const [loading,   setLoading]   = useState(true)
@@ -94,7 +92,7 @@ export function TurnosPage() {
     const [y, m] = mes.split('-').map(Number)
     const finMes = new Date(y, m, 0).toISOString().split('T')[0]
 
-    const [{ data: t, error: errT }, { data: e }, { data: s }, { data: l }] = await Promise.all([
+    const [{ data: t, error: errT }, { data: e }, { data: l }] = await Promise.all([
       supabase.from('turnos')
         .select('*, empleados!turnos_empleado_id_fkey(id, nombre, apellido, legajo, sector_id, sectores(nombre))')
         .gte('fecha', inicioMes).lte('fecha', finMes)
@@ -102,13 +100,11 @@ export function TurnosPage() {
       supabase.from('empleados')
         .select('id, nombre, apellido, legajo, sector_id, tipo_contrato, sectores(nombre)')
         .eq('estado', 'activo').order('apellido'),
-      supabase.from('sectores').select('*').order('nombre'),
       supabase.from('licencias').select('empleado_id, fecha_inicio, fecha_fin, tipo_licencia, estado').in('estado', ['aprobada', 'archivada']),
     ])
     if (errT) { console.error('ERROR TURNOS:', errT.message, errT.code, errT.hint); setLoading(false); return }
     setTurnos(t ?? [])
     setEmpleados(e ?? [])
-    setSectores(s ?? [])
     setLicencias(l ?? [])
     setLoading(false)
   }
@@ -242,16 +238,8 @@ export function TurnosPage() {
     loadAll()
   }
 
-  // Color de celda según tipo de turno
-  function colorCelda(turno: any) {
-    if (!turno) return 'transparent'
-    const info = getTurnoInfo(turno.tipo_turno)
-    return info.color + '25'
-  }
-
   function labelCorto(turno: any) {
     if (!turno) return ''
-    const info = getTurnoInfo(turno.tipo_turno)
     if (turno.tipo_turno === 'franco') return 'F'
     if (turno.tipo_turno.includes('noche')) return 'N'
     if (turno.tipo_turno.includes('tarde') || turno.tipo_turno === 'tarde') return 'T'
@@ -261,10 +249,6 @@ export function TurnosPage() {
 
   const contratadosIds = new Set(empleados.filter((e: any) => e.tipo_contrato === 'contrato').map((e: any) => e.id))
   const turnosReemplazoCount = turnos.filter((t: any) => contratadosIds.has(t.empleado_id) && t.tipo_turno !== 'franco').length
-
-  const turnosParaEdit = formEdit.empleado_id
-    ? getTurnosParaSector((empleados.find(e => e.id === formEdit.empleado_id)?.sectores as any)?.nombre ?? '')
-    : TODOS_TURNOS
 
   return (
     <Page>
