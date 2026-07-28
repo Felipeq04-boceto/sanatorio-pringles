@@ -90,6 +90,10 @@ export function EmpleadoPortalPage() {
   const [mesPortal, setMesPortal] = useState(() => new Date().toISOString().substring(0, 7))
   const [tabSector, setTabSector] = useState('internacion')
 
+  // loadAll captura `usuario` del closure y se dispara solo cuando cambia (login/logout).
+  // Envolverla en useCallback requeriría refactorizar este componente (~1400 líneas).
+  // TODO: resolver al dividir en sub-componentes (code splitting pendiente).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (usuario) loadAll() }, [usuario])
 
   async function cambiarMiPassword() {

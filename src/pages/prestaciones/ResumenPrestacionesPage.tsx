@@ -12,19 +12,20 @@ export function ResumenPrestacionesPage() {
   const [mes, setMes] = useState(now.getMonth() + 1)
   const [anio, setAnio] = useState(now.getFullYear())
 
-  useEffect(() => { loadAll() }, [mes, anio])
-
-  async function loadAll() {
-    setLoading(true)
-    const desde = `${anio}-${String(mes).padStart(2,'0')}-01`
-    const hasta = `${anio}-${String(mes).padStart(2,'0')}-31`
-    const { data } = await supabase.from('cobros_prestaciones')
-      .select('*, prestaciones(nombre, area)')
-      .gte('fecha', desde).lte('fecha', hasta)
-      .neq('estado', 'anulado')
-    setCobros(data ?? [])
-    setLoading(false)
-  }
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      const desde = `${anio}-${String(mes).padStart(2,'0')}-01`
+      const hasta = `${anio}-${String(mes).padStart(2,'0')}-31`
+      const { data } = await supabase.from('cobros_prestaciones')
+        .select('*, prestaciones(nombre, area)')
+        .gte('fecha', desde).lte('fecha', hasta)
+        .neq('estado', 'anulado')
+      setCobros(data ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [mes, anio])
 
   // Totales generales
   const totalFacturado = cobros.reduce((acc, c) => acc + (c.monto_facturado ?? 0), 0)

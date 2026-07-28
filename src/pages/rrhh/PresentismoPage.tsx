@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Badge, Card, Spinner, Empty, Select, Input, Button } from '@/components/ui'
-import { useAuth } from '@/hooks/useAuth'
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const DIAS_SEMANA = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
@@ -23,7 +22,6 @@ function formatHora(iso: string): string {
 }
 
 export function PresentismoPage() {
-  const { usuario } = useAuth()
   const [empleados,   setEmpleados]   = useState<any[]>([])
   const [sectores,    setSectores]    = useState<any[]>([])
   const [marcaciones, setMarcaciones] = useState<any[]>([])
@@ -35,38 +33,39 @@ export function PresentismoPage() {
   const [filtroSector,setFiltroSector]= useState('')
   const [filtroEmp,   setFiltroEmp]   = useState('')
 
-  useEffect(() => { loadAll() }, [vista, fecha, mes])
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      const { data: emp } = await supabase.from('empleados')
+        .select('id, nombre, apellido, legajo, sector_id, sectores(nombre)')
+        .eq('estado', 'activo').order('apellido')
+      const { data: sec } = await supabase.from('sectores').select('*').order('nombre')
 
-  async function loadAll() {
-    setLoading(true)
-    const { data: emp } = await supabase.from('empleados')
-      .select('id, nombre, apellido, legajo, sector_id, sectores(nombre)')
-      .eq('estado', 'activo').order('apellido')
-    const { data: sec } = await supabase.from('sectores').select('*').order('nombre')
+      if (vista === 'diaria') {
+        const [{ data: marc }, { data: turn }] = await Promise.all([
+          supabase.from('marcaciones').select('*').eq('fecha', fecha).order('hora'),
+          supabase.from('turnos').select('*').eq('fecha', fecha),
+        ])
+        setMarcaciones(marc ?? [])
+        setTurnos(turn ?? [])
+      } else {
+        const inicioMes = mes + '-01'
+        const [y, m] = mes.split('-').map(Number)
+        const finMes = new Date(y, m, 0).toISOString().split('T')[0]
+        const [{ data: marc }, { data: turn }] = await Promise.all([
+          supabase.from('marcaciones').select('*').gte('fecha', inicioMes).lte('fecha', finMes).order('hora'),
+          supabase.from('turnos').select('*').gte('fecha', inicioMes).lte('fecha', finMes),
+        ])
+        setMarcaciones(marc ?? [])
+        setTurnos(turn ?? [])
+      }
 
-    if (vista === 'diaria') {
-      const [{ data: marc }, { data: turn }] = await Promise.all([
-        supabase.from('marcaciones').select('*').eq('fecha', fecha).order('hora'),
-        supabase.from('turnos').select('*').eq('fecha', fecha),
-      ])
-      setMarcaciones(marc ?? [])
-      setTurnos(turn ?? [])
-    } else {
-      const inicioMes = mes + '-01'
-      const [y, m] = mes.split('-').map(Number)
-      const finMes = new Date(y, m, 0).toISOString().split('T')[0]
-      const [{ data: marc }, { data: turn }] = await Promise.all([
-        supabase.from('marcaciones').select('*').gte('fecha', inicioMes).lte('fecha', finMes).order('hora'),
-        supabase.from('turnos').select('*').gte('fecha', inicioMes).lte('fecha', finMes),
-      ])
-      setMarcaciones(marc ?? [])
-      setTurnos(turn ?? [])
+      setEmpleados(emp ?? [])
+      setSectores(sec ?? [])
+      setLoading(false)
     }
-
-    setEmpleados(emp ?? [])
-    setSectores(sec ?? [])
-    setLoading(false)
-  }
+    load()
+  }, [vista, fecha, mes])
 
   function getMarcEmp(empId: string, f: string) {
     const m = marcaciones.filter(m => m.empleado_id === empId && m.fecha === f)

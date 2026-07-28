@@ -1,5 +1,5 @@
 import React from 'react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Card, Modal, Input, Select, Spinner, Empty } from '@/components/ui'
@@ -84,9 +84,7 @@ export function TurnosPage() {
 
   const canEdit = usuario?.rol && ['admin','rrhh'].includes(usuario.rol)
 
-  useEffect(() => { loadAll() }, [mes])
-
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     setLoading(true)
     const inicioMes = mes + '-01'
     const [y, m] = mes.split('-').map(Number)
@@ -107,7 +105,9 @@ export function TurnosPage() {
     setEmpleados(e ?? [])
     setLicencias(l ?? [])
     setLoading(false)
-  }
+  }, [mes])
+
+  useEffect(() => { loadAll() }, [loadAll])
 
   const [y, m] = mes.split('-').map(Number)
   const hoy = new Date().toISOString().split('T')[0]
@@ -211,7 +211,8 @@ export function TurnosPage() {
     if (!formEdit.empleado_id || !formEdit.fecha) return
     setSaving(true)
     try {
-      // Excluir campos relacionales que no van en la tabla
+      // Excluir campos relacionales que no van en la tabla (empleados/sectores son JOINs de Supabase, no columnas)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { empleados: _e, sectores: _s, ...datos } = formEdit as any
       // Para franco, asegurar que las horas sean null
       if (datos.tipo_turno === 'franco') {
