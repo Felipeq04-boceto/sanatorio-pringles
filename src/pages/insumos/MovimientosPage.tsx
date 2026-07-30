@@ -6,7 +6,6 @@ import { Badge, Card, Table, Th, Td, Input, Select, Spinner, Empty } from '@/com
 
 export function MovimientosPage() {
   const [movimientos, setMovimientos] = useState<any[]>([])
-  const [insumos, setInsumos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filtroTipo, setFiltroTipo] = useState('')
   const [search, setSearch] = useState('')
@@ -15,12 +14,9 @@ export function MovimientosPage() {
 
   async function loadAll() {
     setLoading(true)
-    const [{ data: m }, { data: i }] = await Promise.all([
-      supabase.from('movimientos_stock').select('*, insumos(nombre, unidad_medida)').order('fecha', { ascending: false }).limit(200),
-      supabase.from('insumos').select('id, nombre').order('nombre'),
-    ])
+    const { data: m } = await supabase.from('movimientos_stock')
+      .select('*, insumos(nombre, unidad_medida)').order('fecha', { ascending: false }).limit(200)
     setMovimientos(m ?? [])
-    setInsumos(i ?? [])
     setLoading(false)
   }
 

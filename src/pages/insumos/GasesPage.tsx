@@ -2,7 +2,7 @@ import React from 'react'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
-import { Button, Badge, Card, Table, Th, Td, Input, Select, Modal, Spinner, Empty, Textarea, StatCard } from '@/components/ui'
+import { Button, Badge, Card, Table, Th, Td, Input, Select, Modal, Spinner, Empty, Textarea } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 
 const ESTADOS: Record<string, { label: string; color: string; badge: any }> = {

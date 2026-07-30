@@ -2,7 +2,7 @@ import React from 'react'
 import { useEffect, useState } from 'react'
 import { supabase, type AlertaStock } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
-import { Button, Badge, Card, Table, Th, Td, Spinner, Empty } from '@/components/ui'
+import { Button, Badge, Card, Table, Th, Td, Spinner } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 
 const TIPO_BADGE: Record<string, any> = {

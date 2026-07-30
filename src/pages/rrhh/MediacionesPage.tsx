@@ -165,7 +165,7 @@ Tu rol es asistir al mediador (no al empleado). Analizá el caso, sugerí estrat
       const data = await response.json()
       const respuesta = data.content?.[0]?.text ?? 'No se pudo obtener respuesta.'
       setMensajesIA([...nuevosMensajes, { rol: 'assistant', contenido: respuesta }])
-    } catch (e) {
+    } catch (_e) {
       setMensajesIA([...nuevosMensajes, { rol: 'assistant', contenido: '⚠️ Error al conectar con el asistente. Intentá de nuevo.' }])
     } finally {
       setLoadingIA(false)

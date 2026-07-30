@@ -5,7 +5,6 @@ import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Badge, Card, Table, Th, Td, Input, Select, Modal, Spinner, Empty, Textarea, StatCard } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 
-type TipoCapacitacion = 'obligatoria' | 'optativa' | 'certificacion' | 'recertificacion'
 type EstadoCertif = 'vigente' | 'por_vencer' | 'vencida' | 'pendiente'
 
 const TIPO_BADGE: Record<string, any> = { obligatoria:'red', optativa:'blue', certificacion:'teal', recertificacion:'amber' }
