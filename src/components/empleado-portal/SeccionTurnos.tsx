@@ -271,6 +271,15 @@ export function SeccionTurnos({ empleado }: Props) {
                   ))}
                 </div>
               </div>
+              {/* Hint horario partido */}
+              {formEditTurno.tipo_turno === 'adm_partido' && (
+                <div style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: 'var(--radius-sm)', padding: '10px 14px' }}>
+                  <p style={{ fontSize: '12px', color: '#6d28d9', fontWeight: 600, marginBottom: '2px' }}>🕐 Horario partido</p>
+                  <p style={{ fontSize: '11px', color: '#7c3aed' }}>
+                    Primer turno: 08:00 — 12:00. El empleado marca su propia vuelta desde el portal al iniciar el segundo turno.
+                  </p>
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Hora entrada</label>
@@ -279,7 +288,9 @@ export function SeccionTurnos({ empleado }: Props) {
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' as any }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>Hora salida</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: '4px' }}>
+                    Hora salida{formEditTurno.tipo_turno === 'adm_partido' ? ' (1er turno)' : ''}
+                  </label>
                   <input type="time" value={formEditTurno.hora_salida_programada ?? ''}
                     onChange={e => setFormEditTurno((p: any) => ({ ...p, hora_salida_programada: e.target.value }))}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-2)', fontSize: '13px', boxSizing: 'border-box' as any }} />
