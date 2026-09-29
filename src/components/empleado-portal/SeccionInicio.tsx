@@ -180,14 +180,33 @@ export function SeccionInicio({ empleado, config, marcaciones, turnos, licencias
     if (!empleado || !licForm.tipo_licencia || !licForm.fecha_inicio || !licForm.fecha_fin) return
     setSavingLic(true)
     try {
-      await supabase.from('licencias').insert({
+      const { data: lic } = await supabase.from('licencias').insert({
         empleado_id:   empleado.id,
         tipo_licencia: licForm.tipo_licencia,
         fecha_inicio:  licForm.fecha_inicio,
         fecha_fin:     licForm.fecha_fin,
         motivo:        licForm.motivo,
         estado:        'pendiente',
-      })
+      }).select().single()
+
+      // Calcular días solicitados (inclusive de ambos extremos)
+      const msDay = 1000 * 60 * 60 * 24
+      const diasSolicitados =
+        Math.round((new Date(licForm.fecha_fin).getTime() - new Date(licForm.fecha_inicio).getTime()) / msDay) + 1
+
+      // Notificar por email — fire-and-forget, no bloquea la UI
+      supabase.functions.invoke('notificar-licencia', {
+        body: {
+          licenciaId:      lic?.id ?? null,
+          empleadoId:      empleado.id,
+          tipo:            licForm.tipo_licencia,
+          fechaInicio:     licForm.fecha_inicio,
+          fechaFin:        licForm.fecha_fin,
+          diasSolicitados,
+          motivo:          licForm.motivo ?? null,
+        },
+      }).catch((err: unknown) => console.warn('notificar-licencia:', err))
+
       setOpenLic(false)
       setLicForm({})
       onRefresh()
