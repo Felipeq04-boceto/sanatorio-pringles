@@ -26,11 +26,16 @@ const SECTORES_MOV = ['Depósito central','Internación','Quirófano','Quirófan
 export function SeccionGases({ empleado }: Props) {
   const { usuario } = useAuth()
 
+  const areaRol: 'enfermeria' | 'quirofano' | null =
+    usuario?.rol === 'referente_enfermeria' ? 'enfermeria' :
+    ['referente_quirofano', 'referente_instrumentadores'].includes(usuario?.rol ?? '') ? 'quirofano' :
+    null  // admin ve todo
+
   const puedeMovEmp = empleado && ['Internación','Quirófano','Quirófano 1','Quirófano 2'].includes(empleado.sector_nombre ?? '')
-  const puedeMovInsumos = ['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
+  const puedeMovInsumos = ['referente_enfermeria','referente_quirofano','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
   const puedeMov = puedeMovEmp || puedeMovInsumos
-  const puedeGestionar = ['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
-  const puedeVerGasesStock = ['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
+  const puedeGestionar = ['referente_enfermeria','referente_quirofano','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
+  const puedeVerGasesStock = ['referente_enfermeria','referente_quirofano','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
 
   const [tubos,                setTubos]                = useState<any[]>([])
   const [openMovTubo,          setOpenMovTubo]          = useState(false)
@@ -46,14 +51,16 @@ export function SeccionGases({ empleado }: Props) {
   const [savingBorrarTubo,     setSavingBorrarTubo]     = useState(false)
 
   useEffect(() => {
-    supabase.from('tubos_gas')
-      .select('*, proveedores(razon_social), insumos(nombre)')
-      .order('numero_serie')
-      .then(({ data }) => setTubos(data ?? []))
+    let q = supabase.from('tubos_gas').select('*, proveedores(razon_social), insumos(nombre)')
+    if (areaRol) q = q.eq('area', areaRol)
+    q.order('numero_serie').then(({ data }) => setTubos(data ?? []))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function recargarTubos() {
-    const { data } = await supabase.from('tubos_gas').select('*, proveedores(razon_social), insumos(nombre)').order('numero_serie')
+    let q = supabase.from('tubos_gas').select('*, proveedores(razon_social), insumos(nombre)')
+    if (areaRol) q = q.eq('area', areaRol)
+    const { data } = await q.order('numero_serie')
     setTubos(data ?? [])
   }
 
@@ -345,6 +352,7 @@ export function SeccionGases({ empleado }: Props) {
                     tipo_gas: nuevoTuboForm.tipo_gas ?? null,
                     ubicacion_actual: nuevoTuboForm.ubicacion_actual ?? null,
                     estado_tubo: nuevoTuboForm.estado_tubo ?? 'lleno',
+                    area: areaRol ?? 'quirofano',
                   })
                   await recargarTubos()
                   setOpenNuevoTubo(false)

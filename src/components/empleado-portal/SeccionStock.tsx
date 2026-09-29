@@ -12,7 +12,13 @@ const SECTORES_DEST = ['Internación','Quirófano','Quirófano 1','Quirófano 2'
 
 export function SeccionStock({ empleado: _empleado }: Props) {
   const { usuario } = useAuth()
-  const puedeVerGasesStock = ['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
+
+  const areaRol: 'enfermeria' | 'quirofano' | null =
+    usuario?.rol === 'referente_enfermeria' ? 'enfermeria' :
+    ['referente_quirofano', 'referente_instrumentadores'].includes(usuario?.rol ?? '') ? 'quirofano' :
+    null  // admin ve todo
+
+  const puedeVerGasesStock = ['referente_enfermeria','referente_quirofano','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
 
   const [stockInsumos,           setStockInsumos]           = useState<any[]>([])
   const [openMovStock,           setOpenMovStock]           = useState(false)
@@ -30,14 +36,16 @@ export function SeccionStock({ empleado: _empleado }: Props) {
   const [savingNuevoInsumo,      setSavingNuevoInsumo]      = useState(false)
 
   useEffect(() => {
-    supabase.from('insumos')
-      .select('*, categorias_insumo(nombre)')
-      .eq('estado', 'activo').order('nombre')
-      .then(({ data }) => setStockInsumos(data ?? []))
+    let q = supabase.from('insumos').select('*, categorias_insumo(nombre)').eq('estado', 'activo')
+    if (areaRol) q = q.eq('area', areaRol)
+    q.order('nombre').then(({ data }) => setStockInsumos(data ?? []))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function recargarStock() {
-    const { data } = await supabase.from('insumos').select('*, categorias_insumo(nombre)').eq('estado', 'activo').order('nombre')
+    let q = supabase.from('insumos').select('*, categorias_insumo(nombre)').eq('estado', 'activo')
+    if (areaRol) q = q.eq('area', areaRol)
+    const { data } = await q.order('nombre')
     setStockInsumos(data ?? [])
   }
 
@@ -53,6 +61,7 @@ export function SeccionStock({ empleado: _empleado }: Props) {
         stock_minimo: nuevoInsumoForm.stock_minimo ? parseInt(nuevoInsumoForm.stock_minimo) : null,
         categoria_id: nuevoInsumoForm.categoria_id,
         estado: 'activo',
+        area: areaRol ?? 'enfermeria',
       })
       if (insErr) { alert('Error: ' + insErr.message); return }
       await recargarStock()
@@ -149,7 +158,7 @@ export function SeccionStock({ empleado: _empleado }: Props) {
                       style={{ padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: 'var(--accent)' }}>
                       Movimiento
                     </button>
-                    {['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '') && (
+                    {['referente_enfermeria','referente_quirofano','referente_instrumentadores','admin'].includes(usuario?.rol ?? '') && (
                       <>
                         <button onClick={() => { setEditStockForm({ ...ins }); setOpenEditarStock(true) }}
                           style={{ padding: '4px 10px', marginLeft: '4px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}>

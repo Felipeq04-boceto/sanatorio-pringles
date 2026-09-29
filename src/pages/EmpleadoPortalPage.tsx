@@ -31,7 +31,7 @@ export function EmpleadoPortalPage() {
   const [config,      setConfig]      = useState<any>({})
 
   const [seccionActiva, setSeccionActiva] = useState<'inicio'|'mediaciones'|'turnos'|'gases'|'stock'|'prestaciones'>(
-    usuario?.rol === 'referente_enfermeria' || usuario?.rol === 'referente_instrumentadores' ? 'gases' : 'inicio'
+    ['referente_enfermeria','referente_quirofano','referente_instrumentadores'].includes(usuario?.rol ?? '') ? 'gases' : 'inicio'
   )
 
   const [openCambiarPass, setOpenCambiarPass] = useState(false)
@@ -42,8 +42,8 @@ export function EmpleadoPortalPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (usuario) loadAll() }, [usuario])
 
-  async function loadAll() {
-    setLoading(true)
+  async function loadAll(silent = false) {
+    if (!silent) setLoading(true)
 
     const { data: cfg } = await supabase.from('configuracion').select('*')
     const cfgMap = (cfg ?? []).reduce((acc: any, c: any) => { acc[c.clave] = c.valor; return acc }, {})
@@ -53,7 +53,7 @@ export function EmpleadoPortalPage() {
       .from('empleados').select('*').eq('usuario_id', usuario!.id).single()
     setEmpleado(emp)
 
-    const esRolInsumos = usuario?.rol === 'referente_enfermeria' || usuario?.rol === 'referente_instrumentadores'
+    const esRolInsumos = ['referente_enfermeria','referente_quirofano','referente_instrumentadores'].includes(usuario?.rol ?? '')
 
     if (!emp) {
       // Rol insumos puede operar sin legajo — SeccionGases/Stock cargan sus propios datos
@@ -103,9 +103,9 @@ export function EmpleadoPortalPage() {
     <Page><div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Spinner size={36} /></div></Page>
   )
 
-  const esRolInsumos = usuario?.rol === 'referente_enfermeria' || usuario?.rol === 'referente_instrumentadores'
-  const puedeVerPrestaciones = ['administrativo','enfermeria','instrumentadora','referente_enfermeria','referente_instrumentadores','rrhh','admin'].includes(usuario?.rol ?? '')
-  const puedeVerGasesStock = ['referente_enfermeria','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
+  const esRolInsumos = ['referente_enfermeria','referente_quirofano','referente_instrumentadores'].includes(usuario?.rol ?? '')
+  const puedeVerPrestaciones = ['administrativo','enfermeria','instrumentadora','referente_enfermeria','referente_quirofano','referente_instrumentadores','rrhh','admin'].includes(usuario?.rol ?? '')
+  const puedeVerGasesStock = ['referente_enfermeria','referente_quirofano','referente_instrumentadores','admin'].includes(usuario?.rol ?? '')
 
   const puedeOperarSinLegajo = esRolInsumos
   if (!empleado && !puedeOperarSinLegajo) return (
@@ -161,13 +161,13 @@ export function EmpleadoPortalPage() {
 
       <Suspense fallback={<SectionSpinner />}>
         {seccionActiva === 'inicio' && (
-          <SeccionInicio empleado={empleado} config={config} marcaciones={marcaciones} turnos={turnos} licencias={licencias} onRefresh={loadAll} />
+          <SeccionInicio empleado={empleado} config={config} marcaciones={marcaciones} turnos={turnos} licencias={licencias} onRefresh={() => loadAll(true)} />
         )}
         {seccionActiva === 'turnos' && <SeccionTurnos empleado={empleado} />}
         {seccionActiva === 'gases' && <SeccionGases empleado={empleado} />}
         {seccionActiva === 'stock' && <SeccionStock empleado={empleado} />}
         {seccionActiva === 'mediaciones' && (
-          <SeccionMediaciones empleado={empleado} mediaciones={mediaciones} onMediacionCreada={loadAll} />
+          <SeccionMediaciones empleado={empleado} mediaciones={mediaciones} onMediacionCreada={() => loadAll(true)} />
         )}
       </Suspense>
 

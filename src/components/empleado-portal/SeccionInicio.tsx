@@ -14,6 +14,16 @@ interface Props {
   onRefresh: () => void
 }
 
+// LCT Art. 150 — días de vacaciones por antigüedad
+function calcVacacionesLCT(fechaIngreso?: string | null): { dias: number; tramo: string } | null {
+  if (!fechaIngreso) return null
+  const anios = Math.floor((Date.now() - new Date(fechaIngreso).getTime()) / (365.25 * 24 * 3600 * 1000))
+  if (anios < 5)  return { dias: 14, tramo: 'menos de 5 años de antigüedad' }
+  if (anios < 10) return { dias: 21, tramo: 'entre 5 y 10 años de antigüedad' }
+  if (anios < 20) return { dias: 28, tramo: 'entre 10 y 20 años de antigüedad' }
+  return           { dias: 35, tramo: '20 años o más de antigüedad' }
+}
+
 function calcDistancia(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000
   const dLat = (lat2 - lat1) * Math.PI / 180
@@ -446,6 +456,41 @@ export function SeccionInicio({ empleado, config, marcaciones, turnos, licencias
             <option value="">Seleccionar...</option>
             {Object.entries(TIPO_LICENCIA).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </Select>
+
+          {/* Panel LCT vacaciones — solo visible cuando se selecciona "vacaciones" */}
+          {licForm.tipo_licencia === 'vacaciones' && (() => {
+            const vac = calcVacacionesLCT(empleado?.fecha_ingreso)
+            const anios = empleado?.fecha_ingreso
+              ? Math.floor((Date.now() - new Date(empleado.fecha_ingreso).getTime()) / (365.25 * 24 * 3600 * 1000))
+              : null
+            return (
+              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 'var(--radius-sm)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: '#1D4ED8' }}>📋 Vacaciones según LCT</p>
+                {vac && anios !== null ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', color: '#1e40af' }}>Antigüedad: <strong>{anios} año{anios !== 1 ? 's' : ''}</strong> ({vac.tramo})</span>
+                      <span style={{ fontSize: '18px', fontWeight: 800, color: '#1D4ED8' }}>{vac.dias} días</span>
+                    </div>
+                    <div style={{ borderTop: '1px solid #BFDBFE', paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <p style={{ fontSize: '11px', color: '#1e40af' }}>
+                        <strong>Art. 150 LCT</strong> — {anios < 5 ? '14 días (menos de 5 años)' : anios < 10 ? '21 días (5–10 años)' : anios < 20 ? '28 días (10–20 años)' : '35 días (más de 20 años)'}
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#1e40af' }}>
+                        <strong>Art. 154 LCT</strong> — Período: 1º octubre al 30 de abril
+                      </p>
+                      <p style={{ fontSize: '11px', color: '#1e40af' }}>
+                        <strong>Art. 164 LCT</strong> — Se pueden fraccionar; mínimo la mitad ({Math.ceil(vac.dias / 2)} días) continuos, fracciones de al menos 7 días
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '12px', color: '#1e40af' }}>No se encontró fecha de ingreso en el legajo.</p>
+                )}
+              </div>
+            )
+          })()}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <Input label="Desde *" type="date" value={licForm.fecha_inicio ?? ''} onChange={e => setLicForm((p: any) => ({ ...p, fecha_inicio: e.target.value }))} />
             <Input label="Hasta *" type="date" value={licForm.fecha_fin ?? ''} onChange={e => setLicForm((p: any) => ({ ...p, fecha_fin: e.target.value }))} />
