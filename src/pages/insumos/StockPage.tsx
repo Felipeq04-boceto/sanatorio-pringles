@@ -19,6 +19,7 @@ export function StockPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filtroCat, setFiltroCat] = useState('')
+  const [filtroArea, setFiltroArea] = useState('')
   const [openMov, setOpenMov] = useState(false)
   const [openNuevo, setOpenNuevo] = useState(false)
   const [selInsumo, setSelInsumo] = useState<any>(null)
@@ -121,11 +122,12 @@ export function StockPage() {
     return 'green'
   }
 
-  const canEdit = usuario?.rol && ['admin', 'referente_enfermeria', 'referente_instrumentadores'].includes(usuario.rol)
+  const canEdit = usuario?.rol && ['admin', 'referente_enfermeria', 'referente_quirofano', 'referente_instrumentadores'].includes(usuario.rol)
   const filtered = insumos.filter(i => {
     const matchSearch = !search || i.nombre.toLowerCase().includes(search.toLowerCase())
     const matchCat = !filtroCat || i.categoria_id === filtroCat
-    return matchSearch && matchCat
+    const matchArea = !filtroArea || i.area === filtroArea
+    return matchSearch && matchCat && matchArea
   })
 
   return (
@@ -134,10 +136,15 @@ export function StockPage() {
         action={canEdit ? <Button onClick={() => { setNuevoForm({ estado: 'activo' }); setOpenNuevo(true) }}>+ Nuevo insumo</Button> : undefined} />
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
-        <Input placeholder="Buscar insumo..." value={search} onChange={e => setSearch(e.target.value)} style={{ maxWidth: 280 }} />
-        <Select value={filtroCat} onChange={e => setFiltroCat(e.target.value)} style={{ width: 200 }}>
+        <Input placeholder="Buscar insumo..." value={search} onChange={e => setSearch(e.target.value)} style={{ maxWidth: 240 }} />
+        <Select value={filtroCat} onChange={e => setFiltroCat(e.target.value)} style={{ width: 190 }}>
           <option value="">Todas las categorías</option>
           {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        </Select>
+        <Select value={filtroArea} onChange={e => setFiltroArea(e.target.value)} style={{ width: 160 }}>
+          <option value="">Todas las áreas</option>
+          <option value="quirofano">🔵 Quirófano</option>
+          <option value="enfermeria">🟢 Enfermería</option>
         </Select>
       </div>
 
@@ -145,11 +152,12 @@ export function StockPage() {
         {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Spinner /></div> :
         filtered.length === 0 ? <Empty message="No se encontraron insumos" /> :
         <Table>
-          <thead><tr><Th>Insumo</Th><Th>Categoría</Th><Th>Stock actual</Th><Th>Mínimo</Th><Th>Ubicación</Th><Th>Estado</Th>{canEdit && <Th>Acciones</Th>}</tr></thead>
+          <thead><tr><Th>Insumo</Th><Th>Categoría</Th><Th>Área</Th><Th>Stock actual</Th><Th>Mínimo</Th><Th>Ubicación</Th><Th>Estado</Th>{canEdit && <Th>Acciones</Th>}</tr></thead>
           <tbody>{filtered.map((ins: any) => (
             <tr key={ins.id}>
               <Td><div><p style={{ fontWeight: 500 }}>{ins.nombre}</p>{ins.descripcion && <p style={{ fontSize: 11, color: 'var(--text-3)' }}>{ins.descripcion}</p>}</div></Td>
               <Td style={{ fontSize: 12 }}>{ins.categorias_insumo?.nombre ?? '—'}</Td>
+              <Td><Badge variant={ins.area === 'quirofano' ? 'blue' : 'green'}>{ins.area === 'quirofano' ? 'Quirófano' : ins.area === 'enfermeria' ? 'Enfermería' : '—'}</Badge></Td>
               <Td><span style={{ fontWeight: 600, color: stockColor(ins), fontFamily: 'var(--font-mono)', fontSize: 13 }}>{ins.stock_actual} {ins.unidad_medida}</span></Td>
               <Td style={{ fontSize: 12, color: 'var(--text-3)' }}>{ins.stock_minimo} {ins.unidad_medida}</Td>
               <Td style={{ fontSize: 12, color: 'var(--text-2)' }}>{ins.ubicacion ?? '—'}</Td>
@@ -176,6 +184,11 @@ export function StockPage() {
           <Input label="Unidad de medida *" value={nuevoForm.unidad_medida ?? ''} onChange={e => setNuevoForm((p: any) => ({ ...p, unidad_medida: e.target.value }))} placeholder="ej: unidades, litros, kg, m³" />
           <Input label="Stock mínimo" type="number" value={nuevoForm.stock_minimo ?? ''} onChange={e => setNuevoForm((p: any) => ({ ...p, stock_minimo: e.target.value }))} />
           <Input label="Ubicación" value={nuevoForm.ubicacion ?? ''} onChange={e => setNuevoForm((p: any) => ({ ...p, ubicacion: e.target.value }))} />
+          <Select label="Área *" value={nuevoForm.area ?? ''} onChange={e => setNuevoForm((p: any) => ({ ...p, area: e.target.value }))}>
+            <option value="">Seleccionar...</option>
+            <option value="enfermeria">Enfermería</option>
+            <option value="quirofano">Quirófano</option>
+          </Select>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24 }}>
           <Button variant="secondary" onClick={() => setOpenNuevo(false)}>Cancelar</Button>

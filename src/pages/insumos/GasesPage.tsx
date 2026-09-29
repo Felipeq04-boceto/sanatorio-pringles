@@ -34,6 +34,7 @@ export function GasesPage() {
   const [search,      setSearch]      = useState('')
   const [filtroGas,   setFiltroGas]   = useState('')
   const [filtroEst,   setFiltroEst]   = useState('')
+  const [filtroArea,  setFiltroArea]  = useState('')
   const [openNuevo,   setOpenNuevo]   = useState(false)
   const [openMovimiento, setOpenMovimiento] = useState(false)
   const [openHistorial,  setOpenHistorial]  = useState(false)
@@ -198,13 +199,14 @@ export function GasesPage() {
     setOpenConfirmBorrar(true)
   }
 
-  const canEdit = usuario?.rol && ['admin', 'referente_enfermeria', 'referente_instrumentadores'].includes(usuario.rol)
+  const canEdit = usuario?.rol && ['admin', 'referente_enfermeria', 'referente_quirofano', 'referente_instrumentadores'].includes(usuario.rol)
 
   const filtered = tubos.filter(t => {
     const matchSearch = !search || t.numero_serie?.toLowerCase().includes(search.toLowerCase())
     const matchGas = !filtroGas || t.tipo_gas === filtroGas
     const matchEst = !filtroEst || t.estado_tubo === filtroEst
-    return matchSearch && matchGas && matchEst
+    const matchArea = !filtroArea || t.area === filtroArea
+    return matchSearch && matchGas && matchEst && matchArea
   })
 
   const hoy = new Date()
@@ -264,10 +266,15 @@ export function GasesPage() {
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap' }}>
-        <Input placeholder="Buscar por nro de serie..." value={search} onChange={e => setSearch(e.target.value)} style={{ maxWidth: 240 }} />
-        <Select value={filtroGas} onChange={e => setFiltroGas(e.target.value)} style={{ width: 180 }}>
+        <Input placeholder="Buscar por nro de serie..." value={search} onChange={e => setSearch(e.target.value)} style={{ maxWidth: 220 }} />
+        <Select value={filtroGas} onChange={e => setFiltroGas(e.target.value)} style={{ width: 170 }}>
           <option value="">Todos los gases</option>
           {Object.entries(GAS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </Select>
+        <Select value={filtroArea} onChange={e => setFiltroArea(e.target.value)} style={{ width: 160 }}>
+          <option value="">Todas las áreas</option>
+          <option value="quirofano">🔵 Quirófano</option>
+          <option value="enfermeria">🟢 Enfermería</option>
         </Select>
         {filtroEst && <Button variant="secondary" size="sm" onClick={() => setFiltroEst('')}>✕ Quitar filtro estado</Button>}
       </div>
@@ -283,6 +290,7 @@ export function GasesPage() {
               <tr>
                 <Th>Nro serie</Th>
                 <Th>Gas</Th>
+                <Th>Área</Th>
                 <Th>Estado</Th>
                 <Th>Ubicación actual</Th>
                 <Th>Proveedor</Th>
@@ -301,6 +309,11 @@ export function GasesPage() {
                       <code style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600 }}>{t.numero_serie}</code>
                     </Td>
                     <Td style={{ fontSize: '13px' }}>{GAS_LABEL[t.tipo_gas] ?? t.tipo_gas}</Td>
+                    <Td>
+                      <Badge variant={t.area === 'quirofano' ? 'blue' : 'green'}>
+                        {t.area === 'quirofano' ? 'Quirófano' : t.area === 'enfermeria' ? 'Enfermería' : '—'}
+                      </Badge>
+                    </Td>
                     <Td><Badge variant={estado.badge}>{estado.label}</Badge></Td>
                     <Td style={{ fontSize: '13px', fontWeight: 500 }}>{t.ubicacion_actual ?? '—'}</Td>
                     <Td style={{ fontSize: '12px', color: 'var(--text-2)' }}>{t.proveedores?.razon_social ?? '—'}</Td>
@@ -356,6 +369,12 @@ export function GasesPage() {
           <Select label="Insumo asociado *" value={form.insumo_id ?? ''} onChange={e => setForm((p: any) => ({ ...p, insumo_id: e.target.value }))}>
             <option value="">Seleccionar...</option>
             {insumos.map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
+          </Select>
+
+          <Select label="Área *" value={form.area ?? ''} onChange={e => setForm((p: any) => ({ ...p, area: e.target.value }))}>
+            <option value="">Seleccionar...</option>
+            <option value="quirofano">Quirófano</option>
+            <option value="enfermeria">Enfermería</option>
           </Select>
 
           <Input label="Capacidad (m³)" type="number" step="0.01" value={form.capacidad_m3 ?? ''} onChange={e => setForm((p: any) => ({ ...p, capacidad_m3: e.target.value }))} />
