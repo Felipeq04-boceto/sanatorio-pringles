@@ -13,6 +13,7 @@ const navRRHH = [
 
 const navInsumos = [
   { to: '/insumos/stock',         label: 'Stock general',  icon: '📦' },
+  { to: '/insumos/pedidos',       label: 'Pedidos',        icon: '📋' },
   { to: '/insumos/gases',         label: 'Gases / tubos',  icon: '🫁' },
   { to: '/insumos/movimientos',   label: 'Movimientos',    icon: '↔️' },
   { to: '/insumos/proveedores',   label: 'Proveedores',    icon: '🏭' },
@@ -127,6 +128,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   {({ isActive }) => <span style={navInnerStyle(isActive)}><span>{n.icon}</span> {n.label}</span>}
                 </NavLink>
               ))}
+            </>
+          )}
+          {canRRHH && (
+            <>
+              <SectionLabel>Calidad</SectionLabel>
+              <NavLink to="/encuestas" style={navItemStyle}>
+                {({ isActive }) => <span style={navInnerStyle(isActive)}><span>💬</span> Encuestas</span>}
+              </NavLink>
             </>
           )}
           {canInsumos && (

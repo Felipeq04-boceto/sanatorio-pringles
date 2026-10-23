@@ -1,3 +1,5 @@
+import EncuestaAtajo from '@/features/encuestas/EncuestaAtajo'
+import EncuestaPublicaPage from './features/encuestas/EncuestaPublicaPage';
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -15,10 +17,12 @@ import { StockPage } from '@/pages/insumos/StockPage'
 import { AlertasPage } from '@/pages/insumos/AlertasPage'
 import { ProveedoresPage } from '@/pages/insumos/ProveedoresPage'
 import { MovimientosPage } from '@/pages/insumos/MovimientosPage'
+import { PedidosPage } from '@/pages/insumos/PedidosPage'
 import { CapacitacionesPage } from '@/pages/rrhh/CapacitacionesPage'
 import { PresentismoPage } from '@/pages/rrhh/PresentismoPage'
 import { CatalogoPrestacionesPage } from '@/pages/prestaciones/CatalogoPrestacionesPage'
 import { CobrosPrestacionesPage } from '@/pages/prestaciones/CobrosPrestacionesPage'
+import { EncuestasPage } from '@/pages/calidad/EncuestasPage'
 import { ResumenPrestacionesPage } from '@/pages/prestaciones/ResumenPrestacionesPage'
 
 // Roles que usan el portal
@@ -91,6 +95,8 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/e/:destino" element={<EncuestaAtajo />} />
+        <Route path="/encuesta" element={<EncuestaPublicaPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<DashboardProtected><DashboardPage /></DashboardProtected>} />
         <Route path="/mi-portal" element={<PortalProtected><EmpleadoPortalPage /></PortalProtected>} />
@@ -105,9 +111,11 @@ export function AppRouter() {
         <Route path="/insumos/movimientos" element={<InsumoProtected><MovimientosPage /></InsumoProtected>} />
         <Route path="/insumos/proveedores" element={<InsumoProtected><ProveedoresPage /></InsumoProtected>} />
         <Route path="/insumos/alertas" element={<InsumoProtected><AlertasPage /></InsumoProtected>} />
+        <Route path="/insumos/pedidos" element={<InsumoProtected><PedidosPage /></InsumoProtected>} />
         <Route path="/prestaciones/catalogo" element={<PrestacionesProtected><CatalogoPrestacionesPage /></PrestacionesProtected>} />
         <Route path="/prestaciones/cobros" element={<PrestacionesProtected><CobrosPrestacionesPage /></PrestacionesProtected>} />
         <Route path="/prestaciones/resumen" element={<PrestacionesProtected><ResumenPrestacionesPage /></PrestacionesProtected>} />
+        <Route path="/encuestas" element={<Protected><EncuestasPage /></Protected>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
