@@ -315,7 +315,7 @@ export function StockPage() {
                     <Td style={{ fontWeight: 500 }}>{m.insumos?.nombre ?? '—'}</Td>
                     <Td>
                       {m.insumos?.area && (
-                        <Badge variant={m.insumos.area === 'quirofano' ? 'blue' : 'green'} style={{ fontSize: 11 }}>
+                        <Badge variant={m.insumos.area === 'quirofano' ? 'blue' : 'green'}>
                           {m.insumos.area === 'quirofano' ? 'Q' : 'E'}
                         </Badge>
                       )}
