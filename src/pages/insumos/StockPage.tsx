@@ -19,7 +19,7 @@ function StatCard({ label, value, color, icon }: { label: string; value: number;
   )
 }
 
-export function StockPage() {
+export function StockPage({ area }: { area?: string }) {
   const { usuario } = useAuth()
   const [insumos,    setInsumos]    = useState<any[]>([])
   const [categorias, setCategorias] = useState<any[]>([])
@@ -30,7 +30,7 @@ export function StockPage() {
   const [tab,        setTab]        = useState<'stock'|'movimientos'>('stock')
   const [search,     setSearch]     = useState('')
   const [filtroCat,  setFiltroCat]  = useState('')
-  const [filtroArea, setFiltroArea] = useState('')
+  const [filtroArea, setFiltroArea] = useState(area ?? '')
   const [filtroMov,  setFiltroMov]  = useState('')
   const [openMov,    setOpenMov]    = useState(false)
   const [openNuevo,  setOpenNuevo]  = useState(false)
@@ -201,15 +201,18 @@ export function StockPage() {
     return m.tipo_movimiento === filtroMov || m.insumos?.nombre?.toLowerCase().includes(filtroMov.toLowerCase())
   })
 
-  const sinStock   = insumos.filter(i => i.stock_actual === 0 && i.estado === 'activo').length
-  const bajoMin    = insumos.filter(i => i.stock_actual > 0 && i.stock_minimo > 0 && i.stock_actual <= i.stock_minimo && i.estado === 'activo').length
-  const normal     = insumos.filter(i => i.stock_actual > (i.stock_minimo ?? 0) && i.estado === 'activo').length
+  const insumosScope = area ? insumos.filter(i => i.area === area) : insumos
+  const sinStock   = insumosScope.filter(i => i.stock_actual === 0 && i.estado === 'activo').length
+  const bajoMin    = insumosScope.filter(i => i.stock_actual > 0 && i.stock_minimo > 0 && i.stock_actual <= i.stock_minimo && i.estado === 'activo').length
+  const normal     = insumosScope.filter(i => i.stock_actual > (i.stock_minimo ?? 0) && i.estado === 'activo').length
+
+  const pageTitle = area === 'enfermeria' ? 'Stock Enfermería' : area === 'quirofano' ? 'Stock Quirófano' : 'Stock e Insumos'
 
   return (
     <Page>
-      <PageHeader title="Stock e Insumos"
-        subtitle={`${insumos.filter(i => i.estado === 'activo').length} insumos activos`}
-        action={canEdit ? <Button onClick={() => { setNuevoForm({ estado: 'activo' }); setOpenNuevo(true) }}>+ Nuevo insumo</Button> : undefined}
+      <PageHeader title={pageTitle}
+        subtitle={`${insumosScope.filter(i => i.estado === 'activo').length} insumos activos`}
+        action={canEdit ? <Button onClick={() => { setNuevoForm({ estado: 'activo', area: area ?? '' }); setOpenNuevo(true) }}>+ Nuevo insumo</Button> : undefined}
       />
 
       {/* Stat cards */}
@@ -241,11 +244,13 @@ export function StockPage() {
             <option value="">Todas las categorías</option>
             {categorias.map((c: any) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </Select>
-          <Select value={filtroArea} onChange={e => setFiltroArea(e.target.value)} style={{ width: 160 }}>
-            <option value="">Todas las áreas</option>
-            <option value="quirofano">🔵 Quirófano</option>
-            <option value="enfermeria">🟢 Enfermería</option>
-          </Select>
+          {!area && (
+            <Select value={filtroArea} onChange={e => setFiltroArea(e.target.value)} style={{ width: 160 }}>
+              <option value="">Todas las áreas</option>
+              <option value="quirofano">🔵 Quirófano</option>
+              <option value="enfermeria">🟢 Enfermería</option>
+            </Select>
+          )}
         </div>
 
         <Card>

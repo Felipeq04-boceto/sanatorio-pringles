@@ -13,6 +13,8 @@ const navRRHH = [
 
 const navInsumos = [
   { to: '/insumos/stock',         label: 'Stock general',  icon: '📦' },
+  { to: '/insumos/enfermeria',    label: 'Enfermería',     icon: '🟢' },
+  { to: '/insumos/quirofano',     label: 'Quirófano',      icon: '🔵' },
   { to: '/insumos/pedidos',       label: 'Pedidos',        icon: '📋' },
   { to: '/insumos/gases',         label: 'Gases / tubos',  icon: '🫁' },
   { to: '/insumos/movimientos',   label: 'Movimientos',    icon: '↔️' },

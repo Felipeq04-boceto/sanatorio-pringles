@@ -107,6 +107,8 @@ export function AppRouter() {
         <Route path="/rrhh/mediaciones" element={<Protected><MediacionesPage /></Protected>} />
         <Route path="/rrhh/presentismo" element={<Protected><PresentismoPage /></Protected>} />
         <Route path="/insumos/stock" element={<InsumoProtected><StockPage /></InsumoProtected>} />
+        <Route path="/insumos/enfermeria" element={<InsumoProtected><StockPage area="enfermeria" /></InsumoProtected>} />
+        <Route path="/insumos/quirofano" element={<InsumoProtected><StockPage area="quirofano" /></InsumoProtected>} />
         <Route path="/insumos/gases" element={<InsumoProtected><GasesPage /></InsumoProtected>} />
         <Route path="/insumos/movimientos" element={<InsumoProtected><MovimientosPage /></InsumoProtected>} />
         <Route path="/insumos/proveedores" element={<InsumoProtected><ProveedoresPage /></InsumoProtected>} />
