@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { NotificationBell } from '@/components/layout/NotificationBell'
 
 const navRRHH = [
   { to: '/rrhh/empleados',      label: 'Empleados',      icon: '👥' },
@@ -189,6 +190,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </p>
             <p style={{ fontSize: '10px', color: 'rgba(174,196,180,0.8)', textTransform: 'capitalize' }}>{usuario?.rol?.replace(/_/g,' ')}</p>
           </div>
+          <NotificationBell canSee={canRRHH || canInsumos} />
           <button onClick={handleLogout} title="Cerrar sesion" style={{
             background: 'none', border: 'none', color: 'rgba(174,196,180,0.7)',
             cursor: 'pointer', padding: '4px', fontSize: '16px'
