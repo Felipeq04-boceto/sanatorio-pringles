@@ -11,10 +11,102 @@ const SeccionGases       = React.lazy(() => import('@/components/empleado-portal
 const SeccionStock       = React.lazy(() => import('@/components/empleado-portal/SeccionStock').then(m => ({ default: m.SeccionStock })))
 const SeccionMediaciones = React.lazy(() => import('@/components/empleado-portal/SeccionMediaciones').then(m => ({ default: m.SeccionMediaciones })))
 
+const MESES = [
+  'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+]
+
 function SectionSpinner() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
       <Spinner size={28} />
+    </div>
+  )
+}
+
+function SeccionRecibos({ empleadoId }: { empleadoId: string }) {
+  const [recibos,  setRecibos]  = useState<any[]>([])
+  const [loading,  setLoading]  = useState(true)
+
+  useEffect(() => { loadRecibos() }, [empleadoId])
+
+  async function loadRecibos() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('recibos_sueldo')
+      .select('*')
+      .eq('empleado_id', empleadoId)
+      .order('anio', { ascending: false })
+      .order('mes',  { ascending: false })
+    setRecibos(data ?? [])
+    setLoading(false)
+  }
+
+  async function handleAbrir(recibo: any) {
+    // Marcar como visto si es la primera vez
+    if (!recibo.visto_at) {
+      await supabase
+        .from('recibos_sueldo')
+        .update({ visto_at: new Date().toISOString() })
+        .eq('id', recibo.id)
+      setRecibos(prev => prev.map(r => r.id === recibo.id ? { ...r, visto_at: new Date().toISOString() } : r))
+    }
+
+    // Generar URL firmada y abrir
+    const { data } = await supabase.storage
+      .from('recibos')
+      .createSignedUrl(recibo.archivo_path, 3600)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
+  if (loading) return <SectionSpinner />
+
+  if (recibos.length === 0) {
+    return (
+      <Card style={{ padding: '40px', textAlign: 'center' }}>
+        <p style={{ fontSize: '28px', marginBottom: '8px' }}>📄</p>
+        <p style={{ fontWeight: 600, marginBottom: '6px' }}>No hay recibos disponibles</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-2)' }}>Cuando RRHH suba tus recibos de sueldo, aparecerán aquí.</p>
+      </Card>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <p style={{ fontSize: '13px', color: 'var(--text-2)', marginBottom: '4px' }}>
+        {recibos.length} recibo{recibos.length !== 1 ? 's' : ''} disponible{recibos.length !== 1 ? 's' : ''}
+      </p>
+      {recibos.map(r => (
+        <Card key={r.id} style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '24px' }}>📄</div>
+          <div style={{ flex: 1, minWidth: '120px' }}>
+            <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '2px' }}>
+              {MESES[r.mes - 1]} {r.anio}
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--text-2)' }}>
+              Subido el {new Date(r.subido_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            {r.visto_at ? (
+              <span style={{ fontSize: '12px', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                ✓ Visto el {new Date(r.visto_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}
+              </span>
+            ) : (
+              <span style={{
+                padding: '3px 10px', borderRadius: '999px',
+                background: '#fef3c7', color: '#d97706',
+                fontSize: '11px', fontWeight: 700
+              }}>
+                NUEVO
+              </span>
+            )}
+            <Button size="sm" variant={r.visto_at ? 'secondary' : 'primary'} onClick={() => handleAbrir(r)}>
+              {r.visto_at ? '⬇ Descargar' : '👁 Ver recibo'}
+            </Button>
+          </div>
+        </Card>
+      ))}
     </div>
   )
 }
@@ -27,10 +119,11 @@ export function EmpleadoPortalPage() {
   const [turnos,      setTurnos]      = useState<any[]>([])
   const [licencias,   setLicencias]   = useState<any[]>([])
   const [mediaciones, setMediaciones] = useState<any[]>([])
+  const [recibosNuevos, setRecibosNuevos] = useState(0)
   const [loading,     setLoading]     = useState(true)
   const [config,      setConfig]      = useState<any>({})
 
-  const [seccionActiva, setSeccionActiva] = useState<'inicio'|'mediaciones'|'turnos'|'gases'|'stock'|'prestaciones'>(
+  const [seccionActiva, setSeccionActiva] = useState<'inicio'|'mediaciones'|'turnos'|'gases'|'stock'|'prestaciones'|'recibos'>(
     ['referente_enfermeria','referente_quirofano','referente_instrumentadores'].includes(usuario?.rol ?? '') ? 'gases' : 'inicio'
   )
 
@@ -56,7 +149,6 @@ export function EmpleadoPortalPage() {
     const esRolInsumos = ['referente_enfermeria','referente_quirofano','referente_instrumentadores'].includes(usuario?.rol ?? '')
 
     if (!emp) {
-      // Rol insumos puede operar sin legajo — SeccionGases/Stock cargan sus propios datos
       setLoading(false)
       void esRolInsumos
       return
@@ -65,7 +157,7 @@ export function EmpleadoPortalPage() {
     const hoy = new Date().toISOString().split('T')[0]
     const inicioMes = hoy.substring(0, 7) + '-01'
 
-    const [{ data: marc }, { data: turn }, { data: lic }, { data: med }] = await Promise.all([
+    const [{ data: marc }, { data: turn }, { data: lic }, { data: med }, { data: recibos }] = await Promise.all([
       supabase.from('marcaciones').select('*').eq('empleado_id', emp.id)
         .gte('fecha', inicioMes).order('hora', { ascending: false }),
       supabase.from('turnos').select('*').eq('empleado_id', emp.id)
@@ -75,11 +167,13 @@ export function EmpleadoPortalPage() {
         .order('created_at', { ascending: false }).limit(10),
       supabase.from('mediaciones').select('*').eq('empleado_id', emp.id)
         .order('created_at', { ascending: false }),
+      supabase.from('recibos_sueldo').select('id, visto_at').eq('empleado_id', emp.id).is('visto_at', null),
     ])
     setMarcaciones(marc ?? [])
     setTurnos(turn ?? [])
     setLicencias(lic ?? [])
     setMediaciones(med ?? [])
+    setRecibosNuevos((recibos ?? []).length)
 
     setLoading(false)
   }
@@ -125,6 +219,19 @@ export function EmpleadoPortalPage() {
     ? `Legajo ${empleado.legajo} · ${new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })}`
     : `Insumos · ${new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })}`
 
+  const tabs = [
+    { key: 'inicio',       label: '🏠 Inicio' },
+    { key: 'turnos',       label: '📅 Turnos' },
+    ...(puedeVerPrestaciones ? [{ key: 'prestaciones', label: '💰 Prestaciones' }] : []),
+    { key: 'mediaciones',  label: `⚖️ Mediaciones${mediaciones.length > 0 ? ` (${mediaciones.length})` : ''}` },
+    ...(empleado ? [{
+      key: 'recibos',
+      label: `📄 Recibos${recibosNuevos > 0 ? ` · ${recibosNuevos} nuevo${recibosNuevos !== 1 ? 's' : ''}` : ''}`
+    }] : []),
+    ...(puedeVerGasesStock ? [{ key: 'gases', label: '🫁 Gases medicinales' }] : []),
+    ...(puedeVerGasesStock ? [{ key: 'stock', label: '📦 Stock e Insumos' }] : []),
+  ]
+
   return (
     <Page>
       <PageHeader title={`Hola, ${nombrePortal}`} subtitle={subtituloPortal} />
@@ -137,14 +244,7 @@ export function EmpleadoPortalPage() {
 
       <div style={{ overflowX: 'auto', marginBottom: '20px', borderBottom: '2px solid var(--border)' }}>
         <div style={{ display: 'flex', gap: '4px', minWidth: 'max-content' }}>
-          {[
-            { key: 'inicio', label: '🏠 Inicio' },
-            { key: 'turnos', label: '📅 Turnos' },
-            ...(puedeVerPrestaciones ? [{ key: 'prestaciones', label: '💰 Prestaciones' }] : []),
-            { key: 'mediaciones', label: `⚖️ Mediaciones${mediaciones.length > 0 ? ` (${mediaciones.length})` : ''}` },
-            ...(puedeVerGasesStock ? [{ key: 'gases', label: '🫁 Gases medicinales' }] : []),
-            ...(puedeVerGasesStock ? [{ key: 'stock', label: '📦 Stock e Insumos' }] : []),
-          ].map(tab => (
+          {tabs.map(tab => (
             <button key={tab.key} onClick={() => setSeccionActiva(tab.key as any)}
               style={{
                 padding: '8px 18px', border: 'none', background: 'none', cursor: 'pointer',
@@ -152,6 +252,9 @@ export function EmpleadoPortalPage() {
                 color: seccionActiva === tab.key ? 'var(--accent)' : 'var(--text-2)',
                 borderBottom: seccionActiva === tab.key ? '2px solid var(--accent)' : '2px solid transparent',
                 marginBottom: '-2px', fontSize: '13px',
+                ...(tab.key === 'recibos' && recibosNuevos > 0 && seccionActiva !== 'recibos'
+                  ? { color: '#d97706' }
+                  : {}),
               }}>
               {tab.label}
             </button>
@@ -170,6 +273,10 @@ export function EmpleadoPortalPage() {
           <SeccionMediaciones empleado={empleado} mediaciones={mediaciones} onMediacionCreada={() => loadAll(true)} />
         )}
       </Suspense>
+
+      {seccionActiva === 'recibos' && empleado && (
+        <SeccionRecibos empleadoId={empleado.id} />
+      )}
 
       {seccionActiva === 'prestaciones' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

@@ -9,6 +9,7 @@ const navRRHH = [
   { to: '/rrhh/licencias',      label: 'Licencias',      icon: '🌴' },
   { to: '/rrhh/capacitaciones', label: 'Capacitaciones', icon: '🎓' },
   { to: '/rrhh/mediaciones',    label: 'Mediaciones',    icon: '⚖️' },
+  { to: '/rrhh/recibos',       label: 'Recibos sueldo', icon: '📄' },
 ]
 
 const navInsumos = [

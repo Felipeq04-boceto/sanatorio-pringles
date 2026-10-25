@@ -20,6 +20,7 @@ import { MovimientosPage } from '@/pages/insumos/MovimientosPage'
 import { PedidosPage } from '@/pages/insumos/PedidosPage'
 import { CapacitacionesPage } from '@/pages/rrhh/CapacitacionesPage'
 import { PresentismoPage } from '@/pages/rrhh/PresentismoPage'
+import { RecibosPage } from '@/pages/rrhh/RecibosPage'
 import { CatalogoPrestacionesPage } from '@/pages/prestaciones/CatalogoPrestacionesPage'
 import { CobrosPrestacionesPage } from '@/pages/prestaciones/CobrosPrestacionesPage'
 import { EncuestasPage } from '@/pages/calidad/EncuestasPage'
@@ -123,6 +124,7 @@ export function AppRouter() {
         <Route path="/rrhh/capacitaciones" element={<Protected><CapacitacionesPage /></Protected>} />
         <Route path="/rrhh/mediaciones" element={<Protected><MediacionesPage /></Protected>} />
         <Route path="/rrhh/presentismo" element={<Protected><PresentismoPage /></Protected>} />
+        <Route path="/rrhh/recibos" element={<Protected><RecibosPage /></Protected>} />
         <Route path="/insumos/stock" element={<InsumoProtected><StockPage /></InsumoProtected>} />
         <Route path="/insumos/enfermeria" element={<EnfermeriaProtected><StockPage area="enfermeria" /></EnfermeriaProtected>} />
         <Route path="/insumos/quirofano" element={<QuirofanoProtected><StockPage area="quirofano" /></QuirofanoProtected>} />
