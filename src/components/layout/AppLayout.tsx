@@ -143,11 +143,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {canInsumos && (
             <>
               <SectionLabel>Insumos</SectionLabel>
-              {navInsumos.map(n => (
-                <NavLink key={n.to} to={n.to} style={navItemStyle}>
-                  {({ isActive }) => <span style={navInnerStyle(isActive)}><span>{n.icon}</span> {n.label}</span>}
-                </NavLink>
-              ))}
+              {navInsumos
+                .filter(n => {
+                  if (rol === 'admin') return true
+                  if (n.to === '/insumos/stock') return false // stock general solo admin
+                  if (n.to === '/insumos/enfermeria') return rol === 'referente_enfermeria'
+                  if (n.to === '/insumos/quirofano') return rol === 'referente_instrumentadores'
+                  return true
+                })
+                .map(n => (
+                  <NavLink key={n.to} to={n.to} style={navItemStyle}>
+                    {({ isActive }) => <span style={navInnerStyle(isActive)}><span>{n.icon}</span> {n.label}</span>}
+                  </NavLink>
+                ))}
             </>
           )}
           {canPrestaciones && !esPortal && (

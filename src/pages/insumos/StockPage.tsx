@@ -187,7 +187,12 @@ export function StockPage({ area }: { area?: string }) {
     return map[tipo] ?? tipo
   }
 
-  const canEdit = !!usuario?.rol && ['admin', 'referente_enfermeria', 'referente_quirofano', 'referente_instrumentadores'].includes(usuario.rol)
+  const canEdit = !!usuario?.rol && (
+    usuario.rol === 'admin' ||
+    (area === 'enfermeria' && usuario.rol === 'referente_enfermeria') ||
+    (area === 'quirofano'  && usuario.rol === 'referente_instrumentadores') ||
+    (!area && ['referente_enfermeria', 'referente_instrumentadores'].includes(usuario.rol))
+  )
 
   const filtered = insumos.filter(i => {
     const matchSearch = !search || i.nombre.toLowerCase().includes(search.toLowerCase())

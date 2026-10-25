@@ -53,13 +53,30 @@ function Protected({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>
 }
 
-// Rutas insumos — solo admin y referentes
+// Rutas insumos — solo admin y referentes (no bloquea por ROLES_PORTAL)
 function InsumoProtected({ children }: { children: React.ReactNode }) {
   const { usuario, loading } = useAuthGuard()
   if (loading) return <Loader />
   if (!usuario) return <Navigate to="/login" replace />
-  if (ROLES_PORTAL.includes(usuario.rol)) return <Navigate to="/mi-portal" replace />
-  if (!ROLES_INSUMOS.includes(usuario.rol)) return <Navigate to="/" replace />
+  if (!ROLES_INSUMOS.includes(usuario.rol)) return <Navigate to="/login" replace />
+  return <AppLayout>{children}</AppLayout>
+}
+
+// Ruta Enfermería — solo admin y referente_enfermeria
+function EnfermeriaProtected({ children }: { children: React.ReactNode }) {
+  const { usuario, loading } = useAuthGuard()
+  if (loading) return <Loader />
+  if (!usuario) return <Navigate to="/login" replace />
+  if (!['admin', 'referente_enfermeria'].includes(usuario.rol)) return <Navigate to="/login" replace />
+  return <AppLayout>{children}</AppLayout>
+}
+
+// Ruta Quirófano — solo admin y referente_instrumentadores
+function QuirofanoProtected({ children }: { children: React.ReactNode }) {
+  const { usuario, loading } = useAuthGuard()
+  if (loading) return <Loader />
+  if (!usuario) return <Navigate to="/login" replace />
+  if (!['admin', 'referente_instrumentadores'].includes(usuario.rol)) return <Navigate to="/login" replace />
   return <AppLayout>{children}</AppLayout>
 }
 
@@ -107,8 +124,8 @@ export function AppRouter() {
         <Route path="/rrhh/mediaciones" element={<Protected><MediacionesPage /></Protected>} />
         <Route path="/rrhh/presentismo" element={<Protected><PresentismoPage /></Protected>} />
         <Route path="/insumos/stock" element={<InsumoProtected><StockPage /></InsumoProtected>} />
-        <Route path="/insumos/enfermeria" element={<InsumoProtected><StockPage area="enfermeria" /></InsumoProtected>} />
-        <Route path="/insumos/quirofano" element={<InsumoProtected><StockPage area="quirofano" /></InsumoProtected>} />
+        <Route path="/insumos/enfermeria" element={<EnfermeriaProtected><StockPage area="enfermeria" /></EnfermeriaProtected>} />
+        <Route path="/insumos/quirofano" element={<QuirofanoProtected><StockPage area="quirofano" /></QuirofanoProtected>} />
         <Route path="/insumos/gases" element={<InsumoProtected><GasesPage /></InsumoProtected>} />
         <Route path="/insumos/movimientos" element={<InsumoProtected><MovimientosPage /></InsumoProtected>} />
         <Route path="/insumos/proveedores" element={<InsumoProtected><ProveedoresPage /></InsumoProtected>} />
