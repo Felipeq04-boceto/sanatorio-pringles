@@ -87,27 +87,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         transition: 'transform 0.25s ease',
       }}>
         <div style={{
-          padding: '20px 18px 16px',
+          padding: '14px 16px',
           borderBottom: '1px solid rgba(255,255,255,0.10)',
-          display: 'flex', alignItems: 'center', gap: '12px'
+          display: 'flex', alignItems: 'center', gap: '10px'
         }}>
-          <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-            <circle cx="19" cy="19" r="17" stroke="#AEC4B4" strokeWidth="1.8" fill="none"/>
-            <path d="M19 9 C14 9, 11 12.5, 11 16.5 C11 20.5, 14 22.5, 19 22.5" stroke="#F4F0E7" strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M19 22.5 C24 22.5, 27 24.5, 27 27 C27 29, 24.5 29.5, 19 29.5" stroke="#F4F0E7" strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <line x1="19" y1="22.5" x2="19" y2="29.5" stroke="#F4F0E7" strokeWidth="2" strokeLinecap="round"/>
-            <circle cx="27" cy="11" r="1.8" fill="#AEC4B4"/>
-          </svg>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 700, fontSize: '13px', color: '#F4F0E7', lineHeight: 1.2 }}>
-              Sanatorio <span style={{ fontWeight: 300 }}>Integral</span>
-            </p>
-            <p style={{ fontSize: '10px', color: 'rgba(174,196,180,0.8)', lineHeight: 1.2 }}>de la Comunidad</p>
+          <div style={{
+            flex: 1,
+            background: 'white',
+            borderRadius: '10px',
+            padding: '6px 10px',
+            display: 'flex', alignItems: 'center',
+          }}>
+            <img
+              src="/logo.jpg"
+              alt="Sanatorio Integral de la Comunidad"
+              style={{ height: '38px', objectFit: 'contain', display: 'block' }}
+            />
           </div>
           {isMobile && (
             <button onClick={() => setSidebarOpen(false)} style={{
               background: 'none', border: 'none', color: 'rgba(174,196,180,0.8)',
-              cursor: 'pointer', fontSize: '20px', padding: '4px'
+              cursor: 'pointer', fontSize: '20px', padding: '4px', flexShrink: 0
             }}>✕</button>
           )}
         </div>
@@ -208,9 +208,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               background: 'none', border: 'none', color: '#F4F0E7',
               cursor: 'pointer', fontSize: '22px', padding: '2px', lineHeight: 1
             }}>☰</button>
-            <p style={{ fontWeight: 700, fontSize: '14px', color: '#F4F0E7' }}>
-              Sanatorio <span style={{ fontWeight: 300 }}>Integral</span>
-            </p>
+            <div style={{ background: 'white', borderRadius: '8px', padding: '3px 8px', display: 'flex', alignItems: 'center' }}>
+              <img src="/logo.jpg" alt="Sanatorio Integral" style={{ height: '28px', objectFit: 'contain', display: 'block' }} />
+            </div>
           </div>
         )}
         {children}
