@@ -20,7 +20,9 @@ export function NotificationBell({ canSee }: { canSee: boolean }) {
   const [open,    setOpen]    = useState(false)
   const [notifs,  setNotifs]  = useState<Notif[]>([])
   const [loading, setLoading] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [panelPos, setPanelPos] = useState<{ bottom: number; left: number } | null>(null)
+  const ref    = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
   // Cerrar al hacer clic fuera
   useEffect(() => {
@@ -127,7 +129,15 @@ export function NotificationBell({ canSee }: { canSee: boolean }) {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
-        onClick={() => { setOpen(o => !o); if (!open) loadNotifs() }}
+        ref={btnRef}
+        onClick={() => {
+          if (!open && btnRef.current) {
+            const rect = btnRef.current.getBoundingClientRect()
+            setPanelPos({ bottom: window.innerHeight - rect.top + 8, left: rect.left })
+          }
+          setOpen(o => !o)
+          if (!open) loadNotifs()
+        }}
         title="Notificaciones"
         style={{
           position: 'relative',
@@ -163,11 +173,11 @@ export function NotificationBell({ canSee }: { canSee: boolean }) {
         )}
       </button>
 
-      {open && (
+      {open && panelPos && (
         <div style={{
-          position: 'absolute',
-          bottom: '44px',
-          left: 0,
+          position: 'fixed',
+          bottom: panelPos.bottom,
+          left: panelPos.left,
           width: '300px',
           background: 'white',
           borderRadius: '12px',
