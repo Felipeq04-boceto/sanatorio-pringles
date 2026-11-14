@@ -20,6 +20,16 @@ serve(async (req) => {
     })
   }
 
+  // Solo la pueden usar las otras funciones del proyecto, que envían la clave de servicio.
+  // Sin este control, cualquiera con la clave pública de la app podría mandar mails en nombre del sanatorio.
+  const claveServicio = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (!claveServicio || req.headers.get('Authorization') !== `Bearer ${claveServicio}`) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   try {
     const payload: SendEmailPayload = await req.json()
 

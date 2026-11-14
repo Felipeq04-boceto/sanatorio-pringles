@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Button, Badge, Card, Modal, Input, Textarea } from '@/components/ui'
 import { Select } from '@/components/ui'
 import { TIPO_LICENCIA } from '@/lib/empleado-portal-constants'
+import { hoyLocal, fechaLocal } from '@/lib/fechas'
 
 interface Props {
   empleado: any
@@ -55,23 +56,32 @@ export function SeccionInicio({ empleado, config, marcaciones, turnos, licencias
     }
   }, [marcaciones])
 
-  // ── Derivados del día de hoy ──────────────────────────────────────────────
-  const hoy = new Date().toISOString().split('T')[0]
+  // ── Jornada actual ────────────────────────────────────────────────────────
+  // La jornada se define por la última marcación, no por la fecha del calendario,
+  // para que los turnos que cruzan la medianoche (noche 22–06) puedan marcar la
+  // salida al día siguiente. Una entrada sin salida se considera abierta hasta
+  // 16 h después; pasado ese plazo se asume que se olvidó marcar la salida.
+  const hoy = hoyLocal()
   const todasMarcaciones = [...marcaciones, ...marcacionesOpt]
-  const marcHoy = todasMarcaciones.filter(m => m.fecha === hoy)
+    .sort((a, b) => new Date(a.hora).getTime() - new Date(b.hora).getTime())
+  const ultima = todasMarcaciones[todasMarcaciones.length - 1]
+  const horasDesdeUltima = ultima ? (Date.now() - new Date(ultima.hora).getTime()) / 3600000 : Infinity
+  const jornadaAbierta = !!ultima && ultima.tipo === 'entrada' && horasDesdeUltima < 16
+  // Al cerrar un turno se sigue mostrando esa jornada un par de horas
+  const fechaJornada = ultima && (jornadaAbierta || (ultima.tipo === 'salida' && horasDesdeUltima < 2))
+    ? ultima.fecha
+    : hoy
+  const marcHoyOrdenadas = todasMarcaciones.filter(m => m.fecha === fechaJornada)
 
-  // Cronológico ascendente (más antiguo primero)
-  const marcHoyOrdenadas = [...marcHoy].sort((a, b) => a.hora.localeCompare(b.hora))
-
-  // Última marcación del día — decide el estado actual
+  // Última marcación de la jornada — decide el estado actual
   const ultimaMarcHoy = marcHoyOrdenadas[marcHoyOrdenadas.length - 1]
 
   // Máquina de estados alternante: entrada→salida→entrada→salida…
-  const puedeMarcarEntrada = !ultimaMarcHoy || ultimaMarcHoy.tipo === 'salida'
-  const puedeMarcarSalida  = !!ultimaMarcHoy && ultimaMarcHoy.tipo === 'entrada'
+  const puedeMarcarEntrada = !jornadaAbierta
+  const puedeMarcarSalida  = jornadaAbierta
 
-  // Cuántos ciclos completos (entrada + salida) lleva hoy
-  const ciclosCompletos = marcHoy.filter(m => m.tipo === 'salida').length
+  // Cuántos ciclos completos (entrada + salida) lleva la jornada
+  const ciclosCompletos = marcHoyOrdenadas.filter(m => m.tipo === 'salida').length
   const esHorarioPartido = ciclosCompletos >= 1
 
   // ── Marcación ─────────────────────────────────────────────────────────────
@@ -117,7 +127,10 @@ export function SeccionInicio({ empleado, config, marcaciones, turnos, licencias
       setGeoFase('inserting')
       const ahora     = new Date()
       const horaLocal = ahora.toTimeString().substring(0, 8)
-      const diaHoy    = ahora.toISOString().split('T')[0]
+      // La entrada abre una jornada con la fecha de hoy (hora argentina).
+      // La salida se registra en la fecha de la jornada que cierra,
+      // así el turno noche queda completo en el día que empezó.
+      const diaHoy    = tipo === 'salida' && jornadaAbierta ? ultima.fecha : fechaLocal(ahora)
 
       const payload: any = {
         empleado_id: empleado.id,

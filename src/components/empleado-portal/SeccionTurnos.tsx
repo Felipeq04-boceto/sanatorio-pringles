@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal } from '@/lib/fechas'
 
 interface Props {
   empleado: any
@@ -180,7 +181,7 @@ export function SeccionTurnos({ empleado }: Props) {
               {dias.map(fecha => {
                 const dow = new Date(fecha + 'T12:00:00').getDay()
                 const esFind = dow === 0 || dow === 6
-                const esHoy = fecha === new Date().toISOString().split('T')[0]
+                const esHoy = fecha === hoyLocal()
                 return (
                   <th key={fecha} style={{ padding: '4px 2px', textAlign: 'center', borderBottom: '2px solid var(--border)', borderRight: '1px solid var(--border)', minWidth: 28,
                     background: esHoy ? '#335955' : esFind ? 'var(--slate-100)' : 'var(--slate-50)',

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Card, Modal, Input, Spinner } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal, sumarDias } from '@/lib/fechas'
 
 const SeccionInicio      = React.lazy(() => import('@/components/empleado-portal/SeccionInicio').then(m => ({ default: m.SeccionInicio })))
 const SeccionTurnos      = React.lazy(() => import('@/components/empleado-portal/SeccionTurnos').then(m => ({ default: m.SeccionTurnos })))
@@ -154,12 +155,14 @@ export function EmpleadoPortalPage() {
       return
     }
 
-    const hoy = new Date().toISOString().split('T')[0]
+    const hoy = hoyLocal()
     const inicioMes = hoy.substring(0, 7) + '-01'
+    // Desde el día anterior como mínimo, para no perder un turno noche abierto el último día del mes
+    const desdeMarc = sumarDias(hoy, -1) < inicioMes ? sumarDias(hoy, -1) : inicioMes
 
     const [{ data: marc }, { data: turn }, { data: lic }, { data: med }, { data: recibos }] = await Promise.all([
       supabase.from('marcaciones').select('*').eq('empleado_id', emp.id)
-        .gte('fecha', inicioMes).order('hora', { ascending: false }),
+        .gte('fecha', desdeMarc).order('hora', { ascending: false }),
       supabase.from('turnos').select('*').eq('empleado_id', emp.id)
         .gte('fecha', hoy).lte('fecha', new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0])
         .order('fecha'),

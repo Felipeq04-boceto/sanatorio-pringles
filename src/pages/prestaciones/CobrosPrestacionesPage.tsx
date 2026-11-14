@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Card, Input, Select, Modal, Spinner, Empty, Badge } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal } from '@/lib/fechas'
 
 type BadgeVariant = 'green' | 'red' | 'amber' | 'blue' | 'slate' | 'teal'
 
@@ -29,7 +30,7 @@ export function CobrosPrestacionesPage() {
   const [filtroCobertura, setFiltroCobertura] = useState('')
   const [openModal, setOpenModal] = useState(false)
   const [editando, setEditando] = useState<any>(null)
-  const [form, setForm] = useState<any>({ fecha: new Date().toISOString().split('T')[0], cobertura: 'obra_social', estado: 'pendiente' })
+  const [form, setForm] = useState<any>({ fecha: hoyLocal(), cobertura: 'obra_social', estado: 'pendiente' })
   const [saving, setSaving] = useState(false)
 
   const canEdit = ['admin','rrhh','enfermeria','instrumentadora','administrativo'].includes(usuario?.rol ?? '')
@@ -71,7 +72,7 @@ export function CobrosPrestacionesPage() {
         await supabase.from('cobros_prestaciones').insert(datos)
       }
       setOpenModal(false)
-      setForm({ fecha: new Date().toISOString().split('T')[0], cobertura: 'obra_social', estado: 'pendiente' })
+      setForm({ fecha: hoyLocal(), cobertura: 'obra_social', estado: 'pendiente' })
       setEditando(null)
       loadAll()
     } finally { setSaving(false) }
@@ -100,7 +101,7 @@ export function CobrosPrestacionesPage() {
       <PageHeader
         title="Cobros por Prestación"
         subtitle={`${cobros.length} registros`}
-        action={canEdit ? <Button onClick={() => { setForm({ fecha: new Date().toISOString().split('T')[0], cobertura: 'obra_social', estado: 'pendiente' }); setEditando(null); setOpenModal(true) }}>+ Nuevo cobro</Button> : undefined}
+        action={canEdit ? <Button onClick={() => { setForm({ fecha: hoyLocal(), cobertura: 'obra_social', estado: 'pendiente' }); setEditando(null); setOpenModal(true) }}>+ Nuevo cobro</Button> : undefined}
       />
 
       {/* Resumen rápido */}

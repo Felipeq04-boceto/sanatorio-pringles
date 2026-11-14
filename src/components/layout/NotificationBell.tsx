@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { hoyLocal } from '@/lib/fechas'
 
 interface Notif {
   id: string
@@ -44,7 +45,7 @@ export function NotificationBell({ canSee }: { canSee: boolean }) {
   async function loadNotifs() {
     if (!canSee) return
     setLoading(true)
-    const hoy   = new Date().toISOString().split('T')[0]
+    const hoy   = hoyLocal()
     const en7   = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
 
     const [{ data: insumos }, { data: pedidos }, { data: licencias }] = await Promise.all([

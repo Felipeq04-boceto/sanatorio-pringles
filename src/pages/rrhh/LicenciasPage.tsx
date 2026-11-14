@@ -4,6 +4,7 @@ import { supabase, type Licencia } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Badge, Card, Table, Th, Td, Input, Select, Modal, Spinner, Empty, Textarea, StatCard } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal } from '@/lib/fechas'
 
 const TIPO_LABEL: Record<string, string> = {
   vacaciones:  'Vacaciones',
@@ -103,8 +104,8 @@ export function LicenciasPage() {
   function openNueva() {
     setForm({
       estado: 'pendiente',
-      fecha_inicio: new Date().toISOString().split('T')[0],
-      fecha_fin: new Date().toISOString().split('T')[0],
+      fecha_inicio: hoyLocal(),
+      fecha_fin: hoyLocal(),
     })
     setOpen(true)
   }

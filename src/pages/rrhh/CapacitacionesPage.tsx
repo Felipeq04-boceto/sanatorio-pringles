@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Badge, Card, Table, Th, Td, Input, Select, Modal, Spinner, Empty, Textarea, StatCard } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal } from '@/lib/fechas'
 
 type EstadoCertif = 'vigente' | 'por_vencer' | 'vencida' | 'pendiente'
 
@@ -116,7 +117,7 @@ export function CapacitacionesPage() {
         action={canEdit ? (
           <div style={{ display:'flex', gap:'8px' }}>
             {tab === 'certificaciones'
-              ? <Button onClick={() => { setEditCertif(null); setFormCertif({ fecha_realizacion: new Date().toISOString().split('T')[0] }); setOpenCertif(true) }}>+ Nueva certificación</Button>
+              ? <Button onClick={() => { setEditCertif(null); setFormCertif({ fecha_realizacion: hoyLocal() }); setOpenCertif(true) }}>+ Nueva certificación</Button>
               : <Button onClick={() => { setEditCurso(null); setFormCurso({ tipo:'optativa' }); setOpenCurso(true) }}>+ Nuevo curso</Button>}
           </div>
         ) : undefined}

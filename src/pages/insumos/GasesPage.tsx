@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Badge, Card, Table, Th, Td, Input, Select, Modal, Spinner, Empty, Textarea } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal } from '@/lib/fechas'
 
 const ESTADOS: Record<string, { label: string; color: string; badge: any }> = {
   lleno:             { label: 'Lleno',               color: 'var(--blue-600)',   badge: 'blue' },
@@ -129,7 +130,7 @@ export function GasesPage() {
       const { error: errUpd } = await supabase.from('tubos_gas').update({
         estado_tubo: movForm.estado_nuevo,
         ubicacion_actual: movForm.ubicacion_nueva || tuboActivo.ubicacion_actual,
-        fecha_ultimo_recambio: movForm.estado_nuevo === 'vacio' ? new Date().toISOString().split('T')[0] : tuboActivo.fecha_ultimo_recambio,
+        fecha_ultimo_recambio: movForm.estado_nuevo === 'vacio' ? hoyLocal() : tuboActivo.fecha_ultimo_recambio,
       }).eq('id', tuboActivo.id)
 
       if (errUpd) { setError(`Error al actualizar tubo: ${errUpd.message}`); return }

@@ -4,6 +4,7 @@ import { supabase, type Empleado, type Sector, type Cargo } from '@/lib/supabase
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Badge, Card, Table, Th, Td, Input, Select, Modal, Spinner, Empty, Textarea } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal } from '@/lib/fechas'
 
 const ESTADO_BADGE: Record<string, any> = {
   activo: 'green', licencia: 'amber', suspendido: 'red', egresado: 'slate'
@@ -181,7 +182,7 @@ export function EmpleadosPage() {
 
   function openNew() {
     setEditing(null)
-    setForm({ estado: 'activo', fecha_ingreso: new Date().toISOString().split('T')[0] })
+    setForm({ estado: 'activo', fecha_ingreso: hoyLocal() })
     setOpen(true)
   }
 

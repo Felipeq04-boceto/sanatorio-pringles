@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Card, Modal, Input, Select, Spinner, Empty } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal } from '@/lib/fechas'
 
 // ── Configuración de sectores ─────────────────────────────────────────────────
 const SECTORES_FLEXIBLES = ['Administración','Imágenes']
@@ -110,7 +111,7 @@ export function TurnosPage() {
   useEffect(() => { loadAll() }, [loadAll])
 
   const [y, m] = mes.split('-').map(Number)
-  const hoy = new Date().toISOString().split('T')[0]
+  const hoy = hoyLocal()
 
   function diasDelMes() {
     const total = new Date(y, m, 0).getDate()

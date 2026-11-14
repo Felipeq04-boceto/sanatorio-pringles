@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Button, Badge, Card, Modal } from '@/components/ui'
 import { Select } from '@/components/ui'
 import { TIPO_MEDIACION, ESTADO_MED_BADGE, ESTADO_MED_LABEL } from '@/lib/empleado-portal-constants'
+import { hoyLocal } from '@/lib/fechas'
 
 interface Props {
   empleado: any
@@ -31,7 +32,7 @@ export function SeccionMediaciones({ empleado, mediaciones, onMediacionCreada }:
         empleado_id: empleado.id,
         tipo_conflicto: medForm.tipo_conflicto,
         descripcion: medForm.descripcion,
-        fecha: new Date().toISOString().split('T')[0],
+        fecha: hoyLocal(),
         estado: 'abierto',
         confidencial: true,
         origen: 'portal_empleado',

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Badge, Card, Spinner, Empty, Select, Input, Button } from '@/components/ui'
+import { hoyLocal } from '@/lib/fechas'
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const DIAS_SEMANA = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
@@ -28,7 +29,7 @@ export function PresentismoPage() {
   const [turnos,      setTurnos]      = useState<any[]>([])
   const [loading,     setLoading]     = useState(true)
   const [vista,       setVista]       = useState<'diaria'|'mensual'>('diaria')
-  const [fecha,       setFecha]       = useState(() => new Date().toISOString().split('T')[0])
+  const [fecha,       setFecha]       = useState(() => hoyLocal())
   const [mes,         setMes]         = useState(() => new Date().toISOString().substring(0, 7))
   const [filtroSector,setFiltroSector]= useState('')
   const [filtroEmp,   setFiltroEmp]   = useState('')
@@ -263,7 +264,7 @@ export function PresentismoPage() {
                 {diasMes.map(d => {
                   const dow = new Date(d + 'T12:00:00').getDay()
                   const esFind = dow === 0 || dow === 6
-                  const esHoy = d === new Date().toISOString().split('T')[0]
+                  const esHoy = d === hoyLocal()
                   return (
                     <th key={d} style={{ padding: '4px 2px', textAlign: 'center', borderBottom: '2px solid var(--border)', borderRight: '1px solid var(--border)', minWidth: 30,
                       background: esHoy ? '#335955' : esFind ? 'var(--slate-100)' : 'var(--slate-50)',

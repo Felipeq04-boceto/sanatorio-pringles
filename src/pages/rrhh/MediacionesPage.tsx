@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Badge, Card, Modal, Input, Spinner, Empty, Select } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { hoyLocal } from '@/lib/fechas'
 
 const TIPO_MEDIACION: Record<string, string> = {
   laboral: 'Conflicto laboral',
@@ -196,7 +197,7 @@ Tu rol es asistir al mediador (no al empleado). Analizá el caso, sugerí estrat
       const { error: err } = await supabase.from('mediaciones').update({
         resolucion: resolucion.trim(),
         estado: 'cerrado',
-        fecha_resolucion: new Date().toISOString().split('T')[0],
+        fecha_resolucion: hoyLocal(),
         mediador_id: usuario?.id,
       }).eq('id', casoActivo.id)
       if (err) { setError(`Error: ${err.message}`); return }
@@ -216,7 +217,7 @@ Tu rol es asistir al mediador (no al empleado). Analizá el caso, sugerí estrat
       const row: any = {
         tipo_conflicto: nuevoForm.tipo_conflicto,
         descripcion: nuevoForm.descripcion,
-        fecha: new Date().toISOString().split('T')[0],
+        fecha: hoyLocal(),
         estado: 'abierto',
         confidencial: true,
         origen: tipoNuevo,
