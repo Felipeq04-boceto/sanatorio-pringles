@@ -208,7 +208,7 @@ export function DashboardPage() {
     })
     setSinStock(sinStockList)
     setStockBajo(stockBajoList)
-    setLicencias((licData ?? []) as LicenciaProxima[])
+    setLicencias((licData ?? []) as unknown as LicenciaProxima[])
     setPedidos(pedData ?? [])
     setLoading(false)
   }

@@ -24,6 +24,7 @@ import { RecibosPage } from '@/pages/rrhh/RecibosPage'
 import { CatalogoPrestacionesPage } from '@/pages/prestaciones/CatalogoPrestacionesPage'
 import { CobrosPrestacionesPage } from '@/pages/prestaciones/CobrosPrestacionesPage'
 import { EncuestasPage } from '@/pages/calidad/EncuestasPage'
+import { EncuestasInformePage } from '@/pages/calidad/EncuestasInformePage'
 import { ResumenPrestacionesPage } from '@/pages/prestaciones/ResumenPrestacionesPage'
 
 // Roles que usan el portal
@@ -137,6 +138,7 @@ export function AppRouter() {
         <Route path="/prestaciones/cobros" element={<PrestacionesProtected><CobrosPrestacionesPage /></PrestacionesProtected>} />
         <Route path="/prestaciones/resumen" element={<PrestacionesProtected><ResumenPrestacionesPage /></PrestacionesProtected>} />
         <Route path="/encuestas" element={<Protected><EncuestasPage /></Protected>} />
+        <Route path="/encuestas/informe" element={<Protected><EncuestasInformePage /></Protected>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

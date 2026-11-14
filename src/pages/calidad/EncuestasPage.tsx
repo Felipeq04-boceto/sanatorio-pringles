@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Button, Badge, Card, Modal, Spinner, Empty, Select } from '@/components/ui'
@@ -83,6 +84,7 @@ function exportarCsv(lista: any[]) {
 
 // ── Página ──────────────────────────────────────────────────────────────
 export function EncuestasPage() {
+  const navigate = useNavigate()
   const [datos, setDatos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [errorCarga, setErrorCarga] = useState<string | null>(null)
@@ -190,6 +192,7 @@ export function EncuestasPage() {
         action={
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <Button variant="secondary" onClick={cargar}>Actualizar</Button>
+            <Button variant="secondary" onClick={() => navigate('/encuestas/informe')}>Informe</Button>
             <Button variant="secondary" onClick={() => exportarCsv(filtrados)} disabled={!filtrados.length}>Exportar CSV</Button>
           </div>
         }
