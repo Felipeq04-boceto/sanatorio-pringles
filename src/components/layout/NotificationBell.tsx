@@ -54,14 +54,14 @@ export function NotificationBell({ canSee }: { canSee: boolean }) {
         .eq('estado', 'activo')
         .or('stock_actual.eq.0,and(stock_actual.gt.0,stock_minimo.gt.0)'),
       supabase
-        .from('pedidos')
-        .select('id, numero, proveedor')
-        .eq('estado', 'pendiente')
+        .from('pedidos_insumos')
+        .select('id, numero, proveedores(razon_social)')
+        .eq('estado', 'solicitado')
         .order('created_at', { ascending: false })
         .limit(10),
       supabase
         .from('licencias')
-        .select('id, empleado_id, tipo, fecha_fin, empleados(nombre, apellido)')
+        .select('id, empleado_id, tipo_licencia, fecha_fin, empleados(nombre, apellido)')
         .eq('estado', 'aprobada')
         .gte('fecha_fin', hoy)
         .lte('fecha_fin', en7)
@@ -101,8 +101,8 @@ export function NotificationBell({ canSee }: { canSee: boolean }) {
       result.push({
         id: 'pedidos',
         tipo: 'pedido_pendiente',
-        titulo: `${pedidos!.length} pedido${pedidos!.length !== 1 ? 's' : ''} pendiente${pedidos!.length !== 1 ? 's' : ''}`,
-        detalle: pedidos!.slice(0, 2).map(p => `#${p.numero ?? p.id.slice(0,6)}${p.proveedor ? ` · ${p.proveedor}` : ''}`).join(', '),
+        titulo: `${pedidos!.length} pedido${pedidos!.length !== 1 ? 's' : ''} por aprobar`,
+        detalle: pedidos!.slice(0, 2).map((p: any) => `${p.numero}${p.proveedores?.razon_social ? ` · ${p.proveedores.razon_social}` : ''}`).join(', '),
         link: '/insumos/pedidos',
       })
     }
@@ -113,7 +113,7 @@ export function NotificationBell({ canSee }: { canSee: boolean }) {
         id: 'licencias',
         tipo: 'licencia_por_vencer',
         titulo: `${licencias!.length} licencia${licencias!.length !== 1 ? 's' : ''} vence${licencias!.length === 1 ? '' : 'n'} pronto`,
-        detalle: licencias!.slice(0, 2).map((l: any) => `${l.empleados?.nombre ?? ''} ${l.empleados?.apellido ?? ''} (${l.tipo})`).join(', '),
+        detalle: licencias!.slice(0, 2).map((l: any) => `${l.empleados?.nombre ?? ''} ${l.empleados?.apellido ?? ''} (${String(l.tipo_licencia ?? '').replace(/_/g, ' ')})`).join(', '),
         link: '/rrhh/licencias',
       })
     }
