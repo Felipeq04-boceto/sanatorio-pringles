@@ -20,3 +20,9 @@ export function sumarDias(fecha: string, dias: number): string {
   const t = new Date(Date.UTC(y, m - 1, d + dias))
   return t.toISOString().slice(0, 10)
 }
+
+/** Hora local (HH:MM, 24 h) de un instante guardado en la base. */
+export function horaLocal(iso: string): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleTimeString('en-GB', { timeZone: ZONA, hour: '2-digit', minute: '2-digit', hour12: false })
+}

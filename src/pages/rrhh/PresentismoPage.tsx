@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Page, PageHeader } from '@/components/layout/AppLayout'
 import { Badge, Card, Spinner, Empty, Select, Input, Button } from '@/components/ui'
-import { hoyLocal } from '@/lib/fechas'
+import { hoyLocal, horaLocal } from '@/lib/fechas'
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const DIAS_SEMANA = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
@@ -94,7 +94,7 @@ export function PresentismoPage() {
     // Verificar tardanza (> 15 min)
     let tardanza = false
     if (turno?.hora_entrada_programada && entrada) {
-      const diff = diffMinutos(entrada.hora?.substring(11, 16) ?? '', turno.hora_entrada_programada.substring(0, 5))
+      const diff = diffMinutos(horaLocal(entrada.hora), turno.hora_entrada_programada.substring(0, 5))
       if (diff > 15) tardanza = true
     }
 
@@ -203,7 +203,7 @@ export function PresentismoPage() {
                 if (estado.tipo === 'ausente') alertas.push('⚠️ Falta sin justificar')
                 if (estado.tipo === 'tardanza' || estado.tipo === 'tarde_sin_salida') {
                   if (turno?.hora_entrada_programada && entrada) {
-                    const diff = diffMinutos(entrada.hora?.substring(11,16) ?? '', turno.hora_entrada_programada.substring(0,5))
+                    const diff = diffMinutos(horaLocal(entrada.hora), turno.hora_entrada_programada.substring(0,5))
                     if (diff > 15) alertas.push(`🕐 ${diff} min tarde`)
                   }
                 }
